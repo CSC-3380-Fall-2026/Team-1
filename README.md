@@ -1,12 +1,14 @@
-# [Name of the Project] : [Team Number]
+# [ChronoShot] : [Team 1]
 # Members
 Project Manager: [Name] ([GitHub Name])\
 Communications Lead: [Name] ([GitHub Name])\
 Git Master: [Name] ([GitHub Name])\
 Design Lead: [Name] ([GitHub Name])\
-Quality Assurance Tester: [Name] ([GitHub Name])
+Quality Assurance Tester: [Seth Fields] ([sethfields903])
 
 # About Our Software
+
+ChronoShot is a fast-paced, 2D arcade-style golf game designed for PC and mobile players. Players can hit the golf ball while it is still in mid-air, activating a time-dilation effect that allows them to adjust the ball's angle, power, and trajectory. Players must use this mechanic to navigate obstacles and complete each hole with as few strokes and as little time as possible. The game features three difficulty-based maps, with each map containing three holes for a total of nine holes. Players will encounter different hazards such as barriers, wind zones, moving obstacles, and combined hazards on the more difficult maps. ChronoShot also supports local multiplayer, allowing at least two players to take turns and compete based on their strokes and complete times. The game will be developed using Unity and C#, with SQL used to manage game data.
 
 Describe a little about what the project is about here.
 ## Platforms Tested on
