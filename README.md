@@ -1,4 +1,4 @@
-# [ChronoShot] : [Team 1]
+# ChronoShot : Team 1
 # Members
 Project Manager: [Name] ([GitHub Name])\
 Communications Lead: [Name] ([GitHub Name])\
