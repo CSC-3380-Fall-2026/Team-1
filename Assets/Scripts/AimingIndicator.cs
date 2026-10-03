@@ -1,5 +1,3 @@
-using System;
-using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>
@@ -86,15 +84,12 @@ public class AimingIndicator : MonoBehaviour
         // Offset to account for the fact that the center of the sprite is (width/2, height/2), not (0, 0).
         Vector2 textureOffset = new Vector2(IndicatorTexture.width / 2, IndicatorTexture.height / 2);
 
-        // Calculates the position of the mouse pointer in the sprite's rect space.
-        Vector2 aimLocalCoordinates = (aimWorldCoordinates - (Vector2)transform.parent.position) * _indicatorTexturePixelsPerUnitDistance;
+        // Calculates the position of the mouse pointer in the sprite's rect space. Limits its distance from the ball's origin in world units to our set value.
+        Vector2 aimLocalCoordinates = Vector2.ClampMagnitude(aimWorldCoordinates - (Vector2)transform.parent.position, _maxIndicatorStretch) * _indicatorTexturePixelsPerUnitDistance;
 
         // Calculates the position of the tip of the arrow indicator's head by multiplying the direction of the vector opposing the pointer
         // by the magnitude of the force and our set modifier.
         Vector2 arrowheadLocation = -aimLocalCoordinates.normalized * launchStrength * _launchLengthMultiplier;
-
-        // Limit the pointer portion of the indicator to our maximum value in world units. Recalculate texture units to do so.
-        aimLocalCoordinates = Vector2.ClampMagnitude(aimWorldCoordinates - (Vector2)transform.parent.position, _maxIndicatorStretch) * _indicatorTexturePixelsPerUnitDistance;
 
         // Calculates the point along the arrow where the wings will branch out left and right.
         Vector2 arrowheadWingsOrigin = arrowheadLocation * _arrowheadWingsDistance;
