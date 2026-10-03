@@ -1,3 +1,4 @@
+using System;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -21,20 +22,24 @@ public class AimingIndicator : MonoBehaviour
 
     // A multiplier on the length of the launch strength indicator applied after it is mulitplied by the launch strength.
     [SerializeField, Tooltip("Influences the length of the launch strength arrow.\nMultiplied with launch strength.")]
-    float _launchLengthMultiplier = 1f;
+    float _launchLengthMultiplier = 2f;
+
+    // A cap on the length of the pointer portion of the indicator in world units
+    [SerializeField, Tooltip("The maximum the indicator can stretch to the pointer in world units.")]
+    float _maxIndicatorStretch = 3f;
 
     // A multiplier on the width of the inner part of the launch strength indicator's arrowhead's wings applied after it is mulitplied by the launch strength.
     [SerializeField, Tooltip("Influences the width of the inner part of the launch strength arrowhead's wings.\nMultiplied with launch strength."), Header("Arrowhead Wings")]
-    float _arrowheadWingsInnerWidthMultiplier = 1f;
+    float _arrowheadWingsInnerWidthMultiplier = 0.3f;
 
     // A multiplier that determines what percentage of the distance from the arrow indicator's center to the inner wing part the distance from the inner to outer part should be.
     [SerializeField, Tooltip("Influences the width of the outer part of the launch strength arrowhead's wings.\nMultiplied with launch strength.")]
-    float _arrowheadWingsOuterWidthMultiplier = 2f;
+    float _arrowheadWingsOuterWidthMultiplier = 1.5f;
 
 
     // Determines how far up the arrow's length the arrowhead wings will be applied. 1 = at the arrowhead, 0 = at the center.
     [SerializeField, Tooltip("Influences how far up the arrow's length the wings will be.\n1 = at the arrowhead, 0 = at the center.")]
-    float _arrowheadWingsDistance = 0.8f;
+    float _arrowheadWingsDistance = 0.7f;
 
     /// <summary>
     /// This function is called when the object is first instantiated, before Start() and Update()
@@ -88,6 +93,9 @@ public class AimingIndicator : MonoBehaviour
         // by the magnitude of the force and our set modifier.
         Vector2 arrowheadLocation = -aimLocalCoordinates.normalized * launchStrength * _launchLengthMultiplier;
 
+        // Limit the pointer portion of the indicator to our maximum value in world units. Recalculate texture units to do so.
+        aimLocalCoordinates = Vector2.ClampMagnitude(aimWorldCoordinates - (Vector2)transform.parent.position, _maxIndicatorStretch) * _indicatorTexturePixelsPerUnitDistance;
+
         // Calculates the point along the arrow where the wings will branch out left and right.
         Vector2 arrowheadWingsOrigin = arrowheadLocation * _arrowheadWingsDistance;
         // Calculates the direction of the vector perpendicular to the arrow's length, then gives this vector the magnitude of the force on the
@@ -101,16 +109,24 @@ public class AimingIndicator : MonoBehaviour
         // Calculates the position of the left and right outer corners of the arrowhead by adding the perpendicular vector
         // again to the inner corners, multiplied by our set modifier to determine the length.
         Vector2 arrowHeadWingsOuterLeft = arrowheadWingsInnerLeft + (arrowheadWingsPerpendicularVector * _arrowheadWingsOuterWidthMultiplier);
-        Vector2 arrowHeadWingsOuterRight = arrowheadWingsInnerLeft - (arrowheadWingsPerpendicularVector * _arrowheadWingsOuterWidthMultiplier);
+        Vector2 arrowHeadWingsOuterRight = arrowheadWingsInnerRight - (arrowheadWingsPerpendicularVector * _arrowheadWingsOuterWidthMultiplier);
+
+        // Applies offsets to the vertices' coordinates to account for displaced origin.
+        aimLocalCoordinates += textureOffset;
+        arrowheadLocation += textureOffset;
+        arrowheadWingsInnerLeft += textureOffset;
+        arrowheadWingsInnerRight += textureOffset;
+        arrowHeadWingsOuterLeft += textureOffset;
+        arrowHeadWingsOuterRight += textureOffset;
 
         // An array of the calculated vertices to be combined into triangles.
         Vector2[] aimingIndicatorArrowVertices = {
-            aimLocalCoordinates + textureOffset,
-            arrowheadLocation + textureOffset,
-            arrowheadWingsInnerLeft + textureOffset,
-            arrowheadWingsInnerRight + textureOffset,
-            arrowHeadWingsOuterLeft + textureOffset,
-            arrowHeadWingsOuterRight + textureOffset
+            aimLocalCoordinates,
+            arrowheadLocation,
+            arrowheadWingsInnerLeft,
+            arrowheadWingsInnerRight,
+            arrowHeadWingsOuterLeft,
+            arrowHeadWingsOuterRight
         };
 
         /*

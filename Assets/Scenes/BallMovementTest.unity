@@ -165,10 +165,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   IndicatorTexture: {fileID: 2800000, guid: 4831cf79820bd4543a6a0f6a36078401, type: 3}
-  _launchLengthMultiplier: 0.1
-  _arrowheadWingsInnerWidthMultiplier: 1
-  _arrowheadWingsOuterWidthMultiplier: 2
-  _arrowheadWingsDistance: 0.8
+  _launchLengthMultiplier: 2
+  _maxIndicatorStretch: 3
+  _arrowheadWingsInnerWidthMultiplier: 0.3
+  _arrowheadWingsOuterWidthMultiplier: 1.5
+  _arrowheadWingsDistance: 0.7
 --- !u!212 &321932706
 SpriteRenderer:
   serializedVersion: 2
