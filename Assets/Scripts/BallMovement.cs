@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 /// Only mouse input handled currently, need to know how to get touch input screen coordinates.
 /// Needs visualization, like a line to signal active dragging.
 /// </summary>
-[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(Rigidbody2D))]
 public class BallMovement : MonoBehaviour
 {
     // The ball's rigidbody component handles its physics interactions.
