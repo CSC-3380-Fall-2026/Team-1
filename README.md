@@ -17,7 +17,7 @@ ChronoShot is a fast-paced, 2D arcade-style golf game designed for PC and mobile
 - Linux
 - Windows
 # Important Links
-Kanban Board: [link]\
+Kanban Board: https://github.com/orgs/CSC-3380-Fall-2026/projects/12/views/1\
 Designs: [link]\
 Styles Guide(s): [link]
 
