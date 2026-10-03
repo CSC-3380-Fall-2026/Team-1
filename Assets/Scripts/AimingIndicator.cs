@@ -1,16 +1,97 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
+/// <summary>
+/// Holds state and logic needed to dynamically draw an aiming indicator (arrow in this case).
+/// </summary>
+[RequireComponent(typeof(SpriteRenderer))]
 public class AimingIndicator : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    // The sprite renderer holds the sprite and information relevant to render it, like textures.
+    SpriteRenderer _spriteRenderer;
+
+    // The sprite whose vertices and triangles we will set dynamically to create the indicator
+    Sprite _indicatorSprite;
+
+    // A multiplier on the length of the launch strength indicator applied after it is mulitplied by the launch strength.
+    [SerializeField, Tooltip("Influences the length of the launch strength arrow.\nMultiplied with launch strength.")]
+    float _launchLengthMultiplier = 1f;
+
+    // A multiplier on the width of the inner part of the launch strength indicator's arrowhead's wings applied after it is mulitplied by the launch strength.
+    [SerializeField, Tooltip("Influences the width of the inner part of the launch strength arrowhead's wings.\nMultiplied with launch strength."), Header("Arrowhead Wings")]
+    float _arrowheadWingsInnerWidthMultiplier = 1f;
+
+    // A multiplier that determines what percentage of the distance from the arrow indicator's center to the inner wing part the distance from the inner to outer part should be.
+    [SerializeField, Tooltip("Influences the width of the outer part of the launch strength arrowhead's wings.\nMultiplied with launch strength.")]
+    float _arrowheadWingsOuterWidthMultiplier = 2f;
+
+
+    // Determines how far up the arrow's length the arrowhead wings will be applied. 1 = at the arrowhead, 0 = at the center.
+    [SerializeField, Tooltip("Influences how far up the arrow's length the wings will be.\n1 = at the arrowhead, 0 = at the center.")]
+    float _arrowheadWingsDistance = 0.8f;
+
+    /// <summary>
+    /// This function is called when the object is first instantiated, before Start() and Update()
+    /// Gets a reference to the sprite renderer component on this object and sets the sprite to the object we will modify.
+    /// </summary>
+    void Awake()
     {
-        
+        _spriteRenderer = GetComponent<SpriteRenderer>();
+        _spriteRenderer.sprite = _indicatorSprite;
     }
 
-    // Update is called once per frame
-    void Update()
+    /// <summary>
+    /// Creates an arrow indicator sprite with vertices at the appropriate positions.
+    /// </summary>
+    /// <param name="aimWorldCoordinates"></param> The world coordinates of the mouse pointer or the finger when aiming.
+    /// <param name="launchStrength"></param> The amount of force to be applied to the ball.
+    /// <param name="showIndicator"></param> Determines whether or not the indicator will be visible.
+    public void UpdateIndicator(Vector3 aimWorldCoordinates, float launchStrength, bool showIndicator)
     {
+        // Hides the arrow by disabling the sprite renderer if showIndicator is true, shows it by enabling if not.
+        if (!showIndicator)
+        {
+            _spriteRenderer.enabled = false;
+            return;
+        } else
+            _spriteRenderer.enabled = true;
         
+        // Calculates the position of the mouse pointer relative to the center of the host object.
+        Vector2 aimLocalCoordinates = aimWorldCoordinates - transform.position;
+        // Calculates the position of the tip of the arrow indicator's head by multiplying the direction of the vector opposing the pointer
+        // by the magnitude of the force and our set modifier.
+        Vector2 arrowheadLocation = -aimLocalCoordinates.normalized * launchStrength * _launchLengthMultiplier;
+
+        // Calculates the point along the arrow where the wings will branch out left and right.
+        Vector2 arrowheadWingsOrigin = arrowheadLocation * _arrowheadWingsDistance;
+        // Calculates the direction of the vector perpendicular to the arrow's length, then gives this vector the magnitude of the force on the
+        // ball with our set multiplier to determine the length of the inner corners of the arrowhead.
+        Vector2 arrowheadWingsPerpendicularVector = Vector2.Perpendicular(arrowheadWingsOrigin.normalized) * launchStrength * _arrowheadWingsInnerWidthMultiplier;
+
+        // Calculates the position of the left and right inner corners of the arrowhead by adding the perpendicular vector to the branching point.
+        Vector2 arrowheadWingsInnerLeft = arrowheadWingsOrigin + arrowheadWingsPerpendicularVector;
+        Vector2 arrowheadWingsInnerRight = arrowheadWingsOrigin - arrowheadWingsPerpendicularVector;
+
+        // Calculates the position of the left and right outer corners of the arrowhead by adding the perpendicular vector
+        // again to the inner corners, multiplied by our set modifier to determine the length.
+        Vector2 arrowHeadWingsOuterLeft = arrowheadWingsInnerLeft + (arrowheadWingsPerpendicularVector * _arrowheadWingsOuterWidthMultiplier);
+        Vector2 arrowHeadWingsOuterRight = arrowheadWingsInnerLeft - (arrowheadWingsPerpendicularVector * _arrowheadWingsOuterWidthMultiplier);
+
+        // An array of the calculated vertices to be combined into triangles.
+        Vector2[] aimingIndicatorArrowVertices = {
+            aimLocalCoordinates,
+            arrowheadLocation,
+            arrowheadWingsInnerLeft,
+            arrowheadWingsInnerRight,
+            arrowHeadWingsOuterLeft,
+            arrowHeadWingsOuterRight
+        };
+
+        // Creates the triangles from the given vertex indices.
+        // Every three digits is a triangle made from the given vertex indices.
+        ushort[] aimingIndicatorArrowTriangles = {0, 2, 3, 4, 5, 1};
+
+        // Applies the triangles to the sprite.
+        _indicatorSprite.OverrideGeometry(aimingIndicatorArrowVertices, aimingIndicatorArrowTriangles);
     }
 }
