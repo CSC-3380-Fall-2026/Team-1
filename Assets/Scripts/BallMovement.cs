@@ -13,6 +13,9 @@ public class BallMovement : MonoBehaviour
     // The ball's rigidbody component handles its physics interactions.
     Rigidbody2D _ballRigidBody;
 
+    // A reference to the ball's child object's component, that handles drawing the aiming indicator.
+    AimingIndicator _aimingIndicator;
+
     // A reference to the "launch" action set in the "Input Actions" settings window.
     InputAction _clickTouchAction;
 
@@ -34,12 +37,13 @@ public class BallMovement : MonoBehaviour
     float _launchStrength;
 
     /// <summary>
-    /// Start is called once before the first execution of Update after the MonoBehaviour is created.
-    /// Stores the rigidbody2D component and the click action from the Input Actions window for future use.
+    /// Awake is called when the object is instantiated, before Start() and Update().
+    /// Stores the rigidbody2D component, aiming indicator component and the click action from the Input Actions window for future use.
     /// </summary>
-    void Start()
+    void Awake()
     {
         _ballRigidBody = GetComponent<Rigidbody2D>();
+        _aimingIndicator = GetComponentInChildren<AimingIndicator>();
 
         _clickTouchAction = InputSystem.actions.FindAction("ClickTouch");
     }
@@ -58,13 +62,16 @@ public class BallMovement : MonoBehaviour
             HandleRelease();
 
         // Checks if the ball is currently being aimed.
-        // If so, translates the current mouse coordinates (touch TODO) from screen to world space coordinates and stores.
+        // If so, translates the current mouse coordinates (touch TODO) from screen to world space coordinates and stores,
+        // determines force amount based on drag distance and a multiplier, then updates the aiming indicator.
         if (_aimingLaunch)
         {
             Vector3 mousePosition = Mouse.current.position.ReadValue();
             mousePosition.z = Math.Abs(Camera.main.transform.position.z); // Needed because camera is not at the same z-coordinate as the rest of the scene.
 
             _indicatorPosition = Camera.current.ScreenToWorldPoint(mousePosition);
+            _launchStrength = Math.Clamp(Vector2.Distance(transform.position, _indicatorPosition), 0, 5) * _forceMultiplier;
+            _aimingIndicator.UpdateIndicator(true, _indicatorPosition, _launchStrength);
         }
     }
 
@@ -83,15 +90,14 @@ public class BallMovement : MonoBehaviour
     
     /// <summary>
     /// Handler for click/touch (TODO) input, intended to be run when the user releases.
-    /// Checks if currently aiming; if so, unflags, determines force amount based on drag distance and a multiplier, then applies force.
+    /// Checks if currently aiming; if so, unflags, hides the aiming indicator, then applies force.
     /// </summary>
     void HandleRelease()
     {
         if (_aimingLaunch)
         {
             _aimingLaunch = false;
-            
-            _launchStrength = Math.Clamp(Vector2.Distance(transform.position, _indicatorPosition), 0, 5) * _forceMultiplier;
+            _aimingIndicator.UpdateIndicator(false);
             _ballRigidBody.AddForce(Vector2.Normalize((Vector2)transform.position - _indicatorPosition) * _launchStrength);
         }
     }
