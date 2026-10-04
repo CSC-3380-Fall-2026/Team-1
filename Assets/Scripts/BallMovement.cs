@@ -120,7 +120,7 @@ public class BallMovement : MonoBehaviour
     /// If this isn't called on the starting frame, the scene could begin with the ball marked as airborne while it started in collision with the ground, but this function
     /// wasn't called. Gound set with IsTouchingLayers called from this object's collider in Start() to set appropriate value if so.
     /// </remarks>
-    /// <param name="collisionInfo"></param> Holds details about the collision that just occured.
+    /// <param name="collisionInfo">Holds details about the collision that just occured.</param>
     void OnCollisionEnter2D(Collision2D collisionInfo)
     {
         CurrentGroundState = (collisionInfo.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) ? GroundState.Grounded : CurrentGroundState;
@@ -131,7 +131,7 @@ public class BallMovement : MonoBehaviour
     /// Checks whether the object that the ball just left collision with is on the "Ground" layer and sets the ball's state to "Grounded" if so, maintains current
     /// state otherwise.
     /// </summary>
-    /// <param name="collisionInfo"></param> Holds details about the collision that the ball just exited.
+    /// <param name="collisionInfo">Holds details about the collision that the ball just exited.</param>
     void OnCollisionExit2D(Collision2D collisionInfo)
     {
         // Only reference for now (maybe in Start() if entry callback doesn't happen on frame 1) no need to store.
