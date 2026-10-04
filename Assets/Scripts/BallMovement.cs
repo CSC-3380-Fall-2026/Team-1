@@ -68,7 +68,7 @@ public class BallMovement : MonoBehaviour
         {
             Vector3 mousePosition = Mouse.current.position.ReadValue();
             mousePosition.z = Math.Abs(Camera.main.transform.position.z); // Needed because camera is not at the same z-coordinate as the rest of the scene.
-
+            
             _indicatorPosition = Camera.current.ScreenToWorldPoint(mousePosition);
             _launchStrength = Math.Clamp(Vector2.Distance(transform.position, _indicatorPosition), 0, 5) * _forceMultiplier;
             _aimingIndicator.UpdateIndicator(true, _indicatorPosition, _launchStrength);

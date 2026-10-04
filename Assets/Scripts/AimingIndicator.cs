@@ -73,7 +73,7 @@ public class AimingIndicator : MonoBehaviour
     /// <param name="showIndicator"></param> Determines whether or not the indicator will be visible.
     public void UpdateIndicator(bool showIndicator, Vector2 aimWorldCoordinates = default(Vector2), float launchStrength = 0)
     {
-        // Hides the arrow by disabling the sprite renderer if showIndicator is true, shows it by enabling if not.
+        // Hides the arrow by disabling the sprite renderer if showIndicator is false, shows it by enabling if true.
         if (!showIndicator)
         {
             _spriteRenderer.enabled = false;
@@ -123,17 +123,7 @@ public class AimingIndicator : MonoBehaviour
             arrowHeadWingsOuterLeft,
             arrowHeadWingsOuterRight
         };
-
-        /*
-        Debug.LogFormat("0: ({0}, {1})\n1: ({2}, {3})\n2: ({4}, {5})\n3: ({6}, {7})\n4: ({8}, {9})\n5: ({10}, {11})",
-        aimLocalCoordinates.x, aimLocalCoordinates.y,
-        arrowheadLocation.x, arrowheadLocation.y,
-        arrowheadWingsInnerLeft.x, arrowheadWingsInnerLeft.y,
-        arrowheadWingsInnerRight.x, arrowheadWingsInnerRight.y,
-        arrowHeadWingsOuterLeft.x, arrowHeadWingsOuterLeft.y,
-        arrowHeadWingsOuterRight.x, arrowHeadWingsOuterRight.y);
-        */
-
+        
         // Creates the triangles from the given vertex indices.
         // Every three digits is a triangle made from the given vertex indices.
         ushort[] aimingIndicatorArrowTriangles = {0, 2, 3, 4, 5, 1};
