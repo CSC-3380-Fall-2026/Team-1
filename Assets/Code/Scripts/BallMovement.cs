@@ -17,8 +17,22 @@ public class BallMovement : MonoBehaviour
         Grounded
     }
 
+    // Defines states describing the ball's motion (enum rather than bool, as likely to add more states later).
+    public enum MotionState
+    {
+        Stationary,
+        Moving
+    }
+
     // Describes whether the ball is in contact with an object on the "Ground" layer or not.
     public GroundState CurrentGroundState;
+
+    // Describes information regarding the ball's motion.
+    public MotionState CurrentMotionState;
+
+    // The minimum velocity at which the ball will be considered to be moving.
+    [SerializeField, Tooltip("The minimum velocity at which the ball will be considered to be moving.")]
+    float _movementThreshold = 0.2f;
 
     // The ball's rigidbody component handles its physics interactions.
     Rigidbody2D _ballRigidBody;
@@ -61,6 +75,7 @@ public class BallMovement : MonoBehaviour
     /// <summary>
     /// Update is called once every frame.
     /// Polls touch/tap input and stores its coordinates.
+    /// Updates the ball's movement state.
     /// </summary>
     void Update()
     {
@@ -82,6 +97,10 @@ public class BallMovement : MonoBehaviour
             _launchStrength = Math.Clamp(Vector2.Distance(transform.position, _indicatorPosition), 0, 5) * _forceMultiplier;
             _aimingIndicator.UpdateIndicator(true, _indicatorPosition, _launchStrength);
         }
+
+        // Sets the ball's motion state to moving if its velocity is greater than our set threshold, stationary otherwise.
+        // If more movement states are added, will need more checks than just this binary one.
+        CurrentMotionState = (_ballRigidBody.linearVelocity.magnitude > _movementThreshold) ? MotionState.Moving : MotionState.Stationary;
     }
 
     /// <summary>
