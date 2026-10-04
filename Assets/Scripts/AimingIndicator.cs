@@ -68,7 +68,7 @@ public class AimingIndicator : MonoBehaviour
     /// <summary>
     /// Creates an arrow indicator sprite with vertices at the appropriate positions.
     /// </summary>
-    /// <param name="screenSpaceCoordinates">The screen coordinates of the mouse pointer or the finger when aiming.</param>
+    /// <param name="aimWorldCoordinates">The world coordinates of the mouse pointer or the finger when aiming.</param>
     /// <param name="launchStrength">The amount of force to be applied to the ball.</param>
     /// <param name="showIndicator">Determines whether or not the indicator will be visible.</param>
     public void UpdateIndicator(bool showIndicator, Vector2 aimWorldCoordinates = default(Vector2), float launchStrength = 0)
