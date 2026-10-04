@@ -77,9 +77,8 @@ public class BallMovement : MonoBehaviour
         if (_aimingLaunch)
         {
             Vector3 mousePosition = Mouse.current.position.ReadValue();
-            mousePosition.z = Math.Abs(Camera.main.transform.position.z); // Needed because camera is not at the same z-coordinate as the rest of the scene.
+            _indicatorPosition = ScreenHelper.ScreenToWorldCoordinates(mousePosition, Camera.main);
 
-            _indicatorPosition = Camera.current.ScreenToWorldPoint(mousePosition);
             _launchStrength = Math.Clamp(Vector2.Distance(transform.position, _indicatorPosition), 0, 5) * _forceMultiplier;
             _aimingIndicator.UpdateIndicator(true, _indicatorPosition, _launchStrength);
         }
@@ -92,9 +91,8 @@ public class BallMovement : MonoBehaviour
     void HandleClick()
     {
         Vector3 mousePosition = Mouse.current.position.ReadValue();
-        mousePosition.z = Math.Abs(Camera.main.transform.position.z); // Needed because camera is not at the same z-coordinate as the rest of the scene.
 
-        if (Vector2.Distance((Vector2)transform.position, (Vector2)Camera.main.ScreenToWorldPoint(mousePosition)) < _ballInteractionRadius)
+        if (Vector2.Distance((Vector2)transform.position, ScreenHelper.ScreenToWorldCoordinates(mousePosition, Camera.main)) < _ballInteractionRadius)
             _aimingLaunch = true;
     }
     
