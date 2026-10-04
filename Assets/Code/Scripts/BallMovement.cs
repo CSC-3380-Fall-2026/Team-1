@@ -89,7 +89,7 @@ public class BallMovement : MonoBehaviour
         // Checks if the ball is currently being aimed.
         // If so, translates the current mouse coordinates (touch TODO) from screen to world space coordinates and stores,
         // determines force amount based on drag distance and a multiplier, then updates the aiming indicator.
-        if (_aimingLaunch)
+        if (_aimingLaunch && CanLaunch())
         {
             Vector3 mousePosition = Mouse.current.position.ReadValue();
             _indicatorPosition = ScreenHelper.ScreenToWorldCoordinates(mousePosition, Camera.main);
@@ -111,17 +111,17 @@ public class BallMovement : MonoBehaviour
     {
         Vector3 mousePosition = Mouse.current.position.ReadValue();
 
-        if (Vector2.Distance((Vector2)transform.position, ScreenHelper.ScreenToWorldCoordinates(mousePosition, Camera.main)) < _ballInteractionRadius)
+        if (Vector2.Distance((Vector2)transform.position, ScreenHelper.ScreenToWorldCoordinates(mousePosition, Camera.main)) < _ballInteractionRadius && CanLaunch())
             _aimingLaunch = true;
     }
     
     /// <summary>
     /// Handler for click/touch (TODO) input, intended to be run when the user releases.
-    /// Checks if currently aiming; if so, unflags, hides the aiming indicator, then applies force.
+    /// Checks if currently aiming and the ball is allowed to launch; if so, unflags, hides the aiming indicator, then applies force.
     /// </summary>
     void HandleRelease()
     {
-        if (_aimingLaunch)
+        if (_aimingLaunch && CanLaunch())
         {
             _aimingLaunch = false;
             _aimingIndicator.UpdateIndicator(false);
@@ -154,5 +154,18 @@ public class BallMovement : MonoBehaviour
         // Only reference for now (maybe in Start() if entry callback doesn't happen on frame 1) no need to store.
         CircleCollider2D ballCollider = GetComponent<CircleCollider2D>();
         CurrentGroundState = (!ballCollider.IsTouchingLayers(LayerMask.NameToLayer("Ground"))) ? GroundState.Airborne : CurrentGroundState;
+    }
+
+    /// <summary>
+    /// Determines whether or not launching the ball is allowed.
+    /// </summary>
+    /// <remarks>
+    /// Assuming more conditions on launching the ball will be introduced later (paused? affected by obstacle/item? etc), using a function
+    /// rather than checking for motion state on every statement related to ball launching will be easier: only have to change one function.
+    /// </remarks>
+    /// <returns>Whether or not the ball is allowed to be launched.</returns>
+    bool CanLaunch()
+    {
+        return CurrentMotionState == MotionState.Stationary;
     }
 }
