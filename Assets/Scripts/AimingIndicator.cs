@@ -1,5 +1,3 @@
-using System;
-using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>
@@ -70,12 +68,12 @@ public class AimingIndicator : MonoBehaviour
     /// <summary>
     /// Creates an arrow indicator sprite with vertices at the appropriate positions.
     /// </summary>
-    /// <param name="screenSpaceCoordinates"></param> The screen coordinates of the mouse pointer or the finger when aiming.
-    /// <param name="launchStrength"></param> The amount of force to be applied to the ball.
-    /// <param name="showIndicator"></param> Determines whether or not the indicator will be visible.
+    /// <param name="screenSpaceCoordinates">The screen coordinates of the mouse pointer or the finger when aiming.</param>
+    /// <param name="launchStrength">The amount of force to be applied to the ball.</param>
+    /// <param name="showIndicator">Determines whether or not the indicator will be visible.</param>
     public void UpdateIndicator(bool showIndicator, Vector2 aimWorldCoordinates = default(Vector2), float launchStrength = 0)
     {
-        // Hides the arrow by disabling the sprite renderer if showIndicator is true, shows it by enabling if not.
+        // Hides the arrow by disabling the sprite renderer if showIndicator is false, shows it by enabling if true.
         if (!showIndicator)
         {
             _spriteRenderer.enabled = false;
@@ -86,15 +84,12 @@ public class AimingIndicator : MonoBehaviour
         // Offset to account for the fact that the center of the sprite is (width/2, height/2), not (0, 0).
         Vector2 textureOffset = new Vector2(IndicatorTexture.width / 2, IndicatorTexture.height / 2);
 
-        // Calculates the position of the mouse pointer in the sprite's rect space.
-        Vector2 aimLocalCoordinates = (aimWorldCoordinates - (Vector2)transform.parent.position) * _indicatorTexturePixelsPerUnitDistance;
+        // Calculates the position of the mouse pointer in the sprite's rect space. Limits its distance from the ball's origin in world units to our set value.
+        Vector2 aimLocalCoordinates = Vector2.ClampMagnitude(aimWorldCoordinates - (Vector2)transform.parent.position, _maxIndicatorStretch) * _indicatorTexturePixelsPerUnitDistance;
 
         // Calculates the position of the tip of the arrow indicator's head by multiplying the direction of the vector opposing the pointer
         // by the magnitude of the force and our set modifier.
         Vector2 arrowheadLocation = -aimLocalCoordinates.normalized * launchStrength * _launchLengthMultiplier;
-
-        // Limit the pointer portion of the indicator to our maximum value in world units. Recalculate texture units to do so.
-        aimLocalCoordinates = Vector2.ClampMagnitude(aimWorldCoordinates - (Vector2)transform.parent.position, _maxIndicatorStretch) * _indicatorTexturePixelsPerUnitDistance;
 
         // Calculates the point along the arrow where the wings will branch out left and right.
         Vector2 arrowheadWingsOrigin = arrowheadLocation * _arrowheadWingsDistance;
@@ -128,17 +123,7 @@ public class AimingIndicator : MonoBehaviour
             arrowHeadWingsOuterLeft,
             arrowHeadWingsOuterRight
         };
-
-        /*
-        Debug.LogFormat("0: ({0}, {1})\n1: ({2}, {3})\n2: ({4}, {5})\n3: ({6}, {7})\n4: ({8}, {9})\n5: ({10}, {11})",
-        aimLocalCoordinates.x, aimLocalCoordinates.y,
-        arrowheadLocation.x, arrowheadLocation.y,
-        arrowheadWingsInnerLeft.x, arrowheadWingsInnerLeft.y,
-        arrowheadWingsInnerRight.x, arrowheadWingsInnerRight.y,
-        arrowHeadWingsOuterLeft.x, arrowHeadWingsOuterLeft.y,
-        arrowHeadWingsOuterRight.x, arrowHeadWingsOuterRight.y);
-        */
-
+        
         // Creates the triangles from the given vertex indices.
         // Every three digits is a triangle made from the given vertex indices.
         ushort[] aimingIndicatorArrowTriangles = {0, 2, 3, 4, 5, 1};
