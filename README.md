@@ -4,7 +4,7 @@ Project Manager: [Name] ([GitHub Name])\
 Communications Lead: Daniel (dmelen3)\
 Git Master: Tega (isometrc)\
 Design Lead: [Name] ([GitHub Name])\
-Quality Assurance Tester: Seth Fields (sethfields903)
+Quality Assurance Tester: Seth (sethfields903)
 
 # About Our Software
 
