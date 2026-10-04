@@ -10,16 +10,6 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody2D))]
 public class BallMovement : MonoBehaviour
 {
-    // Defines states describing whether the ball is in contact with an object on the "Ground" layer or not.
-    public enum GroundState
-    {
-        Airborne,
-        Grounded
-    }
-
-    // Describes whether the ball is in contact with an object on the "Ground" layer or not.
-    public GroundState CurrentGroundState;
-
     // The ball's rigidbody component handles its physics interactions.
     Rigidbody2D _ballRigidBody;
 
@@ -78,7 +68,7 @@ public class BallMovement : MonoBehaviour
         {
             Vector3 mousePosition = Mouse.current.position.ReadValue();
             mousePosition.z = Math.Abs(Camera.main.transform.position.z); // Needed because camera is not at the same z-coordinate as the rest of the scene.
-            
+
             _indicatorPosition = Camera.current.ScreenToWorldPoint(mousePosition);
             _launchStrength = Math.Clamp(Vector2.Distance(transform.position, _indicatorPosition), 0, 5) * _forceMultiplier;
             _aimingIndicator.UpdateIndicator(true, _indicatorPosition, _launchStrength);
@@ -110,32 +100,5 @@ public class BallMovement : MonoBehaviour
             _aimingIndicator.UpdateIndicator(false);
             _ballRigidBody.AddForce(Vector2.Normalize((Vector2)transform.position - _indicatorPosition) * _launchStrength);
         }
-    }
-
-    /// <summary>
-    /// This function is called whenever the ball object's collider (CircleCollider2D in this case) begins colliding with another object in its "callbackLayers" list.
-    /// Checks whether the object that the ball collided with is on the "Ground" layer and sets the ball's state to "Grounded" if so, maintains current state otherwise.
-    /// </summary>
-    /// <remarks>
-    /// If this isn't called on the starting frame, the scene could begin with the ball marked as airborne while it started in collision with the ground, but this function
-    /// wasn't called. Gound set with IsTouchingLayers called from this object's collider in Start() to set appropriate value if so.
-    /// </remarks>
-    /// <param name="collisionInfo">Holds details about the collision that just occured.</param>
-    void OnCollisionEnter2D(Collision2D collisionInfo)
-    {
-        CurrentGroundState = (collisionInfo.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) ? GroundState.Grounded : CurrentGroundState;
-    }
-
-    /// <summary>
-    /// This function is called whenever the ball object's collider (CircleCollider2D in this case) exits collision with another object in its "callbackLayers" list.
-    /// Checks whether the object that the ball just left collision with is on the "Ground" layer and sets the ball's state to "Grounded" if so, maintains current
-    /// state otherwise.
-    /// </summary>
-    /// <param name="collisionInfo">Holds details about the collision that the ball just exited.</param>
-    void OnCollisionExit2D(Collision2D collisionInfo)
-    {
-        // Only reference for now (maybe in Start() if entry callback doesn't happen on frame 1) no need to store.
-        CircleCollider2D ballCollider = GetComponent<CircleCollider2D>();
-        CurrentGroundState = (!ballCollider.IsTouchingLayers(LayerMask.NameToLayer("Ground"))) ? GroundState.Airborne : CurrentGroundState;
     }
 }
