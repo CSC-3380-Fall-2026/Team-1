@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -30,8 +31,12 @@ public class BallMovement : MonoBehaviour
     // Describes information regarding the ball's motion.
     public MotionState CurrentMotionState;
 
+    // Only objects in these layers will apply friction to the ball.
+    [Tooltip("Only objects in these layers will apply friction to the ball."), Header("Friction")]
+    public LayerMask FrictionCheckLayers;
+
     // The minimum velocity at which the ball will be considered to be moving.
-    [SerializeField, Tooltip("The minimum velocity at which the ball will be considered to be moving.")]
+    [SerializeField, Tooltip("The minimum velocity at which the ball will be considered to be moving."), Header("Launching")]
     float _movementThreshold = 0.2f;
 
     // The ball's rigidbody component handles its physics interactions.
@@ -59,6 +64,9 @@ public class BallMovement : MonoBehaviour
 
     // Determines the amount of force applied to the ball. Based on indicator distance from ball's center.
     float _launchStrength;
+
+    // Ignores friction if greater than 0. Used to prevent friction from cancelling launches for a chosen number of physics updates.
+    int _ignoreFriction = 0;
 
     /// <summary>
     /// Awake is called when the object is instantiated, before Start() and Update().
@@ -104,6 +112,56 @@ public class BallMovement : MonoBehaviour
     }
 
     /// <summary>
+    /// Called every time the physics engine updates.
+    /// Used to apply the friction of every object in contact if they in one of the appropriate layers.
+    /// </summary>
+    void FixedUpdate()
+    {
+        // In case we decide we don't want friction applied this physics engine update.
+        if (_ignoreFriction > 0)
+        {
+            _ignoreFriction--;
+            return;
+        }
+
+        // This object configures the request for all objects in contact. Currently filters for those in our chosen layers.
+        ContactFilter2D ballCollisionFilter = new ContactFilter2D();
+        ballCollisionFilter.useLayerMask = true;
+        ballCollisionFilter.layerMask = FrictionCheckLayers;
+
+        // Stores information about the contact points of all collisions that pass the filter in the list.
+        List<ContactPoint2D> ballCollisionContacts = new List<ContactPoint2D>();
+        _ballRigidBody.GetContacts(ballCollisionFilter, ballCollisionContacts);
+
+        foreach(ContactPoint2D contactPoint in ballCollisionContacts)
+        {
+            // The force applied to the ball at the point of contact. Remains at zero if the ball is stationary.
+            Vector2 frictionForce = Vector2.zero;
+
+            // Stores the velocity of the point on the rigidbody where the collision occured. Accounts for linear and angular velocity.
+            Vector2 contactPointVelocity = _ballRigidBody.GetPointVelocity(contactPoint.point);
+
+            // Avoids needless computation, as no friction needed if the ball is stationary.
+            if (contactPointVelocity.magnitude > 0)
+            {
+                // Friction opposes motion, so its direction should be opposite that of the velocity of the rigidbody at the point of contact.
+                Vector2 frictionForceDirection = -contactPointVelocity.normalized;
+
+                // The magnitude of the vector projection of the net forces acting on the ball onto the normal vector.
+                // The rigidbody's totalForce attribute only accounts for those created with AddForce and its family of functions, not gravity.
+                float normalForceMagnitude = ((_ballRigidBody.totalForce + Physics2D.gravity) * contactPoint.normal).magnitude;
+
+                // Calculates the dynamic friction in the direction opposing motion.
+                // The colliding object's friction value is the coefficient of dynamic friction.
+                frictionForce = contactPoint.collider.friction * normalForceMagnitude * frictionForceDirection;
+            }
+            
+            // Applies the friction force on the ball's rigidbody at the point of contact.
+            _ballRigidBody.AddForceAtPosition(frictionForce, contactPoint.point);
+        }
+    }
+
+    /// <summary>
     /// Handler for click/touch (TODO) input, intended to be run when the user begins pressing.
     /// Checks if the current mouse position is within the ball's interaction radius, sets aiming status active if so.
     /// </summary>
@@ -125,6 +183,10 @@ public class BallMovement : MonoBehaviour
         {
             _aimingLaunch = false;
             _aimingIndicator.UpdateIndicator(false);
+
+            // If we don't ignore friction for a number of FixedUpdates, it will greatly oppose the launch force. Disabled next FixedUpdate call.
+            _ignoreFriction += 3;
+
             _ballRigidBody.AddForce(Vector2.Normalize((Vector2)transform.position - _indicatorPosition) * _launchStrength);
         }
     }

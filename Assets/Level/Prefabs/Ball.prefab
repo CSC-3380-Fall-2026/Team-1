@@ -111,7 +111,7 @@ Rigidbody2D:
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_GravityScale: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: bd78aac087b9bfc4fafdf2443cb20c03, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -132,7 +132,7 @@ CircleCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: bd78aac087b9bfc4fafdf2443cb20c03, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -171,6 +171,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   CurrentGroundState: 0
+  CurrentMotionState: 0
+  FrictionCheckLayers:
+    serializedVersion: 2
+    m_Bits: 8
+  FrictionStationaryVelocity: 0
+  _movementThreshold: 0.2
   _ballInteractionRadius: 1
   _forceMultiplier: 50
 --- !u!1 &8645518760804587130
