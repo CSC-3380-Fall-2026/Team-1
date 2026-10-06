@@ -2,7 +2,7 @@
 
 CREATE TABLE courses (
 
-    course_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    course_id INTEGER PRIMARY KEY AUTO_INCREMENT,
     course_name TEXT NOT NULL,
     difficulty TEXT NOT NULL
 );
@@ -11,7 +11,7 @@ CREATE TABLE courses (
 
 CREATE TABLE holes (
 
-    hole_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    hole_id INTEGER PRIMARY KEY AUTO_INCREMENT, 
     course_id INTEGER NOT NULL, 
     hole_number INTEGER NOT NULL,
 
