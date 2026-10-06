@@ -301,6 +301,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6ee600c8ac31ec409535a9a71b24e70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  ResetPoints: []
+  ResetObstructionLayers:
+    serializedVersion: 2
+    m_Bits: 0
   _ballPrefab: {fileID: 1446885788393809777, guid: 0827ca675c70eba46a467692dc4b73b6, type: 3}
 --- !u!1 &1851287306
 GameObject:
