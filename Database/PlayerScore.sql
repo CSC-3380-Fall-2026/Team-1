@@ -1,18 +1,20 @@
 -- Stores players scores and gameplay results for each hole
 
 CREATE TABLE player_score ( 
-    score_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    player_name TEXT NOT NULL,
+    score_id INTEGER NOT NULL AUTO_INCREMENT,
+    player_name VARCHAR(100) NOT NULL,
     course_id INTEGER NOT NULL,
     hole_id INTEGER NOT NULL,
     strokes INTEGER NOT NULL,
-    completion_time REAL NOT NULL
+    completion_time DECIMAL(10, 2) NOT NULL,
+    PRIMARY KEY (score_id),
+    FOREIGN KEY (course_id) REFERENCES courses(course_id),
+    FOREIGN KEY (hole_id) REFERENCES holes(hole_id)
 );
 
 -- Adds a sample player score to verify the table works correctly
 INSERT INTO player_score (
 
-    score_id,
     player_name,
     course_id,
     hole_id,
@@ -23,7 +25,6 @@ INSERT INTO player_score (
 
 VALUES ( 
 
-    1, 
     'Test Player',
     1,
     1,
@@ -34,4 +35,12 @@ VALUES (
 
 -- Verifies that the sample player score was added correctly
 
-SELECT * FROM player_score;
+SELECT 
+    
+    score_id, 
+    player_name, 
+    course_id, 
+    hole_id, 
+    strokes, 
+    completion_time
+FROM player_score;
