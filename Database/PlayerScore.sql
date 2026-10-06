@@ -1,7 +1,7 @@
 -- Stores players scores and gameplay results for each hole
 
-CREATE TABLE PlayerScore ( 
-    score_id INTEGER PRIMARY KEY,
+CREATE TABLE player_score ( 
+    score_id INTEGER PRIMARY KEY AUTOINCREMENT,
     player_name TEXT NOT NULL,
     course_id INTEGER NOT NULL,
     hole_id INTEGER NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE PlayerScore (
 );
 
 -- Adds a sample player score to verify the table works correctly
-INSERT INTO PlayerScore (
+INSERT INTO player_score (
 
     score_id,
     player_name,
@@ -34,4 +34,4 @@ VALUES (
 
 -- Verifies that the sample player score was added correctly
 
-SELECT * FROM PlayerScore;
+SELECT * FROM player_score;
