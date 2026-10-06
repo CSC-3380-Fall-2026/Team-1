@@ -3,87 +3,103 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 
+/// <summary>
+/// Containts unit test for the BallMovement compnent
+/// Test the ball's movement and ground states
+/// </summary>
 public class BallMovementTest
 {
-    private GameObject ball;
-    private Rigidbody2D rigidBody;
-    private BallMovement ballMovement;
+    private GameObject _ball;
+    private Rigidbody2D _rigidBody;
+    private BallMovement _ballMovement;
+
+    /// <summary>
+    /// Sets up a temporary ball and its required components before each test
+    /// </summary>
 
     [SetUp]
     public void SetUp()
     {
-        // Create a temporary ball for each test
-        ball = new GameObject("Test Ball");
-
-        // Adds the components needed to test the ball
-        rigidBody = ball.AddComponent<Rigidbody2D>();
-        ball.AddComponent<CircleCollider2D>();
-        ballMovement = ball.AddComponent<BallMovement>();
+        _ball = new GameObject("Test Ball");
+        _rigidBody = _ball.AddComponent<Rigidbody2D>();
+        _ball.AddComponent<CircleCollider2D>();
+        _ballMovement = _ball.AddComponent<BallMovement>();
     }
+
+    /// <summary>
+    /// Removes the temporary ball after each test
+    /// </summary>
 
     [TearDown]
     public void TearDown()
     {
-        // Delete the temporary ball after each test
-        GameObject.DestroyImmediate(ball);
+        GameObject.DestroyImmediate(_ball);
     }
+
+    /// <summary>
+    /// Verifies that a ball with zero velocity is stationary
+    /// </summary>
 
     [Test]
     public void BallWithZeroVelocityIsStationary()
     {
-        // Give the ball no movement
-        rigidBody.linearVelocity = Vector2.zero;
-
-        // Check that the ball is considered stationary 
+        _rigidBody.linearVelocity = Vector2.zero;
         Assert.AreEqual(
             BallMovement.MotionState.Stationary,
-            ballMovement.CurrentMotionState
+            _ballMovement.CurrentMotionState
         );
     }
+
+    /// <summary>
+    /// Verifies that a ball is moving above the velocity threshold is moving
+    /// </summary>
 
     [Test] 
     public void BallWithVelocityAboveThresholdIsMoving()
     {
-        // Give the ball enough velocity to be considered moving 
-        rigidBody.linearVelocity = new Vector2(1f, 0f);
+        _rigidBody.linearVelocity = new Vector2(1f, 0f);
 
-        ballMovement.CurrentMotionState = 
-        rigidBody.linearVelocity.magnitude > 0.2f 
+        _ballMovement.CurrentMotionState = 
+        _rigidBody.linearVelocity.magnitude > 0.2f 
         ? BallMovement.MotionState.Moving 
         : BallMovement.MotionState.Stationary;
 
-        // Check that the ball is considered moving
         Assert.AreEqual(
             BallMovement.MotionState.Moving,
-            ballMovement.CurrentMotionState
+            _ballMovement.CurrentMotionState
         );
     }
+
+    /// <summary>
+    /// Verifies that the ball can be set to the grounded state
+    /// </summary>
 
     [Test]
     public void BallCanBeSetToGround()
     {
-        // Set the ball's state to ground
-        ballMovement.CurrentGroundState = BallMovement.GroundState.Grounded;
+        _ballMovement.CurrentGroundState = BallMovement.GroundState.Grounded;
 
-        // Check that the ball is now on the ground
         Assert.AreEqual(
             BallMovement.GroundState.Grounded,
-            ballMovement.CurrentGroundState
+            _ballMovement.CurrentGroundState
         );
     }
+
+    /// <summary>
+    /// Verifies that the ball canbe set to the airborne state
+    /// </summary>
 
     [Test]
     public void BallCanBeSetToAirborne()
     {
 
-        // Set the ball's state to airborne
-        ballMovement.CurrentGroundState = BallMovement.GroundState.Airborne;
+        _ballMovement.CurrentGroundState = BallMovement.GroundState.Airborne;
 
-        // Check that the ball is now airborne
         Assert.AreEqual(
             BallMovement.GroundState.Airborne,
-            ballMovement.CurrentGroundState
+            _ballMovement.CurrentGroundState
         );
     }
+
 
 }
