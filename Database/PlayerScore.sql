@@ -7,6 +7,7 @@ CREATE TABLE player_score (
     hole_id INTEGER NOT NULL,
     strokes INTEGER NOT NULL,
     completion_time DECIMAL(10, 2) NOT NULL,
+    score_amount INTEGER NOT NULL,
     PRIMARY KEY (score_id),
     FOREIGN KEY (course_id) REFERENCES courses(course_id),
     FOREIGN KEY (hole_id) REFERENCES holes(hole_id)
@@ -19,7 +20,8 @@ INSERT INTO player_score (
     course_id,
     hole_id,
     strokes,
-    completion_time
+    completion_time,
+    score_amount
 
 )
 
@@ -29,7 +31,8 @@ VALUES (
     1,
     1,
     4,
-    32.57
+    32.57,
+    1000
 
 );
 
@@ -43,4 +46,5 @@ SELECT
     hole_id, 
     strokes, 
     completion_time
+    score_amount
 FROM player_score;
