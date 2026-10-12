@@ -50,7 +50,7 @@ public class BallMovement : MonoBehaviour
 
     // The radius around the ball's center that can be clicked on to interact with it.
     [SerializeField, Tooltip("The radius around the ball's center that can be clicked on to interact with it.")]
-     float _ballInteractionRadius = 1;
+    float _ballInteractionRadius = 1;
 
     // The force multiplier applied after distance from the ball is calculated.
     [SerializeField, Tooltip("Multiplied with dragging distance (capped at 5 units) to calculate the final force applied.")] 
@@ -67,6 +67,10 @@ public class BallMovement : MonoBehaviour
 
     // Ignores friction if greater than 0. Used to prevent friction from cancelling launches for a chosen number of physics updates.
     int _ignoreFriction = 0;
+
+    [SerializeField, Tooltip("The rate of passage of time when aiming the ball.\n1.0 = regular\n0.0 = frozen")]
+    float _aimingTimeRate = 0.2f;
+
 
     /// <summary>
     /// Awake is called when the object is instantiated, before Start() and Update().
@@ -170,7 +174,12 @@ public class BallMovement : MonoBehaviour
         Vector3 mousePosition = Mouse.current.position.ReadValue();
 
         if (Vector2.Distance((Vector2)transform.position, ScreenHelper.ScreenToWorldCoordinates(mousePosition, Camera.main)) < _ballInteractionRadius && CanLaunch())
+        {
             _aimingLaunch = true;
+
+            // Tells the GameMaster slow time to the ball's set value.
+            GameMaster.Instance.SetTimeRate(_aimingTimeRate);
+        }
     }
     
     /// <summary>
@@ -186,6 +195,9 @@ public class BallMovement : MonoBehaviour
 
             // If we don't ignore friction for a number of FixedUpdates, it will greatly oppose the launch force. Disabled next FixedUpdate call.
             _ignoreFriction += 3;
+
+            // Tells the GameMaster to restore time to the set default value.
+            GameMaster.Instance.SetTimeRate();
 
             _ballRigidBody.AddForce(Vector2.Normalize((Vector2)transform.position - _indicatorPosition) * _launchStrength);
         }

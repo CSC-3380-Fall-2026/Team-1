@@ -22,6 +22,9 @@ public class GameMaster : MonoBehaviour
     [Tooltip("Objects in these layers will be considered to be obstructing the reset point.")]
     public LayerMask ResetObstructionLayers;
 
+    [SerializeField, Tooltip("The normal rate of passage of time.\n1.0 = regular\n0.0 = frozen"), Header("Time")]
+    float _normalTimeRate = 1.0f;
+
     // The ball object to be created at the beginning of runtime.
     [SerializeField, Tooltip("The ball object to be created at the beginning of runtime."), Header("Testing")]
     GameObject _ballPrefab;
@@ -84,6 +87,30 @@ public class GameMaster : MonoBehaviour
 
         // Sets the ball's position to that of the first unobstructed reset point found.
         ballToBeReset.transform.position = resetLocation;
+    }
+
+    /// <summary>
+    /// Sets the rate of passage of time to a given percentage of its normal speed.
+    /// </summary>
+    /// <remarks>
+    /// It is possible that each ball's time-slow amount could vary (powerups, obstacles, etc).
+    /// To account for that, let whoever calls it (ball) set the rate rather than defining a slow amount variable on the GameMaster.
+    /// </remarks>
+    /// <param name="newTimeRate">
+    /// The new rate at which time will pass.
+    /// 1.0f = normal, 0.0f = frozen.
+    /// If left empty (or set to -1.0f), will be set to normal value defined in GameMaster.
+    /// </param>
+    public void SetTimeRate(float newTimeRate = -1.0f)
+    {
+        // If no value given (or -1.0f) set the rate to our set value (in case we decide on a different default).
+        if (newTimeRate == -1.0f)
+        {
+            Time.timeScale = _normalTimeRate;
+            return;
+        }
+
+        Time.timeScale = newTimeRate;
     }
 
     /// <summary>
