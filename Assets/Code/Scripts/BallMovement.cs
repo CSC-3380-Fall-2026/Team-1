@@ -28,17 +28,6 @@ public class BallMovement : MonoBehaviour
     // Describes whether the ball is in contact with an object on the "Ground" layer or not.
     public GroundState CurrentGroundState;
 
-    /// <summary>
-    /// Gets whether the ball is currently in the air
-    /// </summary>
-    public bool IsAirborne
-    {
-        get
-        {
-            return CurrentGroundState == GroundState.Airborne;
-        }
-    }
-
     // Describes information regarding the ball's motion.
     public MotionState CurrentMotionState;
 
@@ -89,19 +78,6 @@ public class BallMovement : MonoBehaviour
         _aimingIndicator = GetComponentInChildren<AimingIndicator>();
 
         _clickTouchAction = InputSystem.actions.FindAction("ClickTouch");
-    }
-
-
-    /// <summary>
-    /// Initializes the ball's ground state when the scene begins.
-    /// </summary>
-    void Start()
-    {
-        CircleCollider2D ballCollider = GetComponent<CircleCollider2D>();
-
-        CurrentGroundState = ballCollider.IsTouchingLayers(
-            LayerMask.GetMask("Ground")
-        ) ? GroundState.Grounded : GroundState.Airborne;
     }
 
     /// <summary>
@@ -239,7 +215,7 @@ public class BallMovement : MonoBehaviour
     {
         // Only reference for now (maybe in Start() if entry callback doesn't happen on frame 1) no need to store.
         CircleCollider2D ballCollider = GetComponent<CircleCollider2D>();
-        CurrentGroundState = (!ballCollider.IsTouchingLayers(LayerMask.GetMask("Ground"))) ? GroundState.Airborne : CurrentGroundState;
+        CurrentGroundState = (!ballCollider.IsTouchingLayers(LayerMask.NameToLayer("Ground"))) ? GroundState.Airborne : CurrentGroundState;
     }
 
     /// <summary>
