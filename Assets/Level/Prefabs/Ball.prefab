@@ -178,6 +178,7 @@ MonoBehaviour:
   _movementThreshold: 0.2
   _ballInteractionRadius: 1
   _forceMultiplier: 50
+  _aimingTimeRate: 0.2
 --- !u!1 &8645518760804587130
 GameObject:
   m_ObjectHideFlags: 0

@@ -45,12 +45,16 @@ public class AimingIndicator : MonoBehaviour
     /// </summary>
     void Awake()
     {
+        // Initializes a reference to the sprite renderer component on this object.
         _spriteRenderer = GetComponent<SpriteRenderer>();
 
+        // Creates a sprite using the entire set texture, centered at the textures center.
         Rect indicatorTextureRect = new Rect(0, 0, IndicatorTexture.width, IndicatorTexture.height);
         Vector2 indicatorTextureCenter = new Vector2(0.5f, 0.5f);
         _indicatorSprite = Sprite.Create(IndicatorTexture, indicatorTextureRect, indicatorTextureCenter, _indicatorTexturePixelsPerUnitDistance);
 
+        // Actually sets the sprite renderer's sprite reference to the recently created sprite and disables it.
+        // Will be re-enabled when aiming.
         _spriteRenderer.sprite = _indicatorSprite;
         _spriteRenderer.enabled = false;
     }

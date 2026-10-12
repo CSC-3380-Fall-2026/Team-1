@@ -36,7 +36,7 @@ public class GameMaster : MonoBehaviour
     /// No status effects currently, but assuming a BallStatus component is added with said behavior, will call its reset function.
     /// </remarks>
     /// <param name="ballToBeReset">A reference to the ball we would like to reset.</param>
-    /// <param name="resetLocation">The coordinates of the place we would like to reset the ball to.</param>
+    /// <param name="resetLocationObjects">GameObjects whose locations are candidates for the reset.</param>
     /// <param name="removeStatusEffects">Whether or not we will remove any status effects currently affecting the ball.</param>
     public void ResetBall(GameObject ballToBeReset, GameObject[] resetLocationObjects, bool removeStatusEffects = true)
     {
@@ -132,6 +132,7 @@ public class GameMaster : MonoBehaviour
     /// </summary>
     void Start()
     {
+        // Creates a ball based on the prefab, located at the origin and with no rotation.
         Instantiate(_ballPrefab, Vector3.zero, Quaternion.identity);
     }
 }
