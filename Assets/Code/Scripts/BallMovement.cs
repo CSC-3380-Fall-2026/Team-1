@@ -235,8 +235,8 @@ public class BallMovement : MonoBehaviour
             // If we don't ignore friction for a number of FixedUpdates, it will greatly oppose the launch force. Disabled next FixedUpdate call.
             _ignoreFriction += 3;
 
-            // Tells the GameMaster to restore time to the set default value.
-            GameMaster.Instance.SetTimeRate();
+            // Resets Chronoshot when a new shot begins.
+            GameMaster.Instance.ResetChronoShot();
 
             // Provides a clean movement/force slate for the new launch.
             _ballRigidBody.totalForce = Vector2.zero;
