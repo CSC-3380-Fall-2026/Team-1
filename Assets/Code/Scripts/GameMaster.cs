@@ -87,6 +87,16 @@ public class GameMaster : MonoBehaviour
 
         // Sets the ball's position to that of the first unobstructed reset point found.
         ballToBeReset.transform.position = resetLocation;
+        // Resets ChronoShot so no time dilation carries over after the ball is reset.
+        ResetChronoShot();
+    }
+    
+    /// <summary>
+    /// Resets ChronoShot to its default inactive state.
+    /// </summary>
+    public void ResetChronoShot()
+    {
+        SetTimeRate();
     }
 
     /// <summary>
