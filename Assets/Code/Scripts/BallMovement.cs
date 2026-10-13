@@ -300,7 +300,7 @@ public class BallMovement : MonoBehaviour
     /// <param name="collisionInfo">Holds details about the collision that the ball just exited.</param>
     void OnCollisionExit2D(Collision2D collisionInfo)
     {
-        CurrentGroundState = (!_ballRigidBody.IsTouchingLayers(LayerMask.NameToLayer("Ground"))) ? GroundState.Airborne : CurrentGroundState;
+        CurrentGroundState = (!_ballRigidBody.IsTouchingLayers(LayerMask.GetMask("Ground"))) ? GroundState.Airborne : CurrentGroundState;
     }
 
     /// <summary>
