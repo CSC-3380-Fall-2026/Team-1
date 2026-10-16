@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -13,6 +14,9 @@ public class GameMaster : MonoBehaviour
         get;
         private set;
     }
+
+    [SerializeField]
+    Hole _currentHole;
 
     // A list of game objects whose locations will be used as reset points.
     [Tooltip("A list of game objects whose locations will be used as reset points."), Header("Ball Reset")]
@@ -87,6 +91,7 @@ public class GameMaster : MonoBehaviour
 
         // Sets the ball's position to that of the first unobstructed reset point found.
         ballToBeReset.transform.position = resetLocation;
+
         // Resets ChronoShot so no time dilation carries over after the ball is reset.
         ResetChronoShot();
     }
@@ -121,6 +126,16 @@ public class GameMaster : MonoBehaviour
         }
 
         Time.timeScale = newTimeRate;
+    }
+
+    /// <summary>
+    /// Calculates a ball's resulting score based on the number of shots made and the current hole's score modifiers.
+    /// </summary>
+    /// <param name="shotCount">The number of shots made before reaching the goal.</param>
+    /// <returns>The score calculated given the number of shots and the current hole's values.</returns>
+    float CalculateScore(int shotCount)
+    {
+        return (float)(_currentHole.BaseScore * Math.Pow(_currentHole.ShotCountScoreFactor, shotCount));
     }
 
     /// <summary>

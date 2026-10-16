@@ -374,6 +374,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6ee600c8ac31ec409535a9a71b24e70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  _currentHole: {fileID: 11400000, guid: e9b4376227e8dc24a91387430f188ca1, type: 2}
   ResetPoints: []
   ResetObstructionLayers:
     serializedVersion: 2
