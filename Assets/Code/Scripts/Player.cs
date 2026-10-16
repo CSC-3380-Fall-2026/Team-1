@@ -19,7 +19,10 @@ public class Player : ScriptableObject
     // Later, a reference to a ScriptableObject with cosmetic choices.
     // Maybe a reference to a settings object for player-specific settings.
 
-    // Constructor. Only needs to set the name for now.
+    /// <summary>
+    /// Constructor. Only sets the name for now.
+    /// </summary>
+    /// <param name="playerName">The name of the new player.</param>
     public Player(String playerName)
     {
         PlayerName = playerName;

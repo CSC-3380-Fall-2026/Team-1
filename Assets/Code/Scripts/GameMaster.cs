@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using UnityEditor.EditorTools;
 using UnityEngine;
 
 /// <summary>
@@ -28,6 +26,10 @@ public class GameMaster : MonoBehaviour
     // The balls in the current map. Ball index should match player index.
     List<GameObject> _balls = new List<GameObject>();
 
+     // The ball object to be created at the beginning of the round.
+    [SerializeField, Tooltip("The ball object to be created at the beginning of the round.")]
+    GameObject _ballPrefab;
+
     // A list of reset points whose locations will be used as reset points.
     [Tooltip("A list of reset points whose locations will be used as spawn points."), Header("Ball Reset")]
     public GameObject[] SpawnPoints;
@@ -38,10 +40,6 @@ public class GameMaster : MonoBehaviour
 
     [SerializeField, Tooltip("The normal rate of passage of time.\n1.0 = regular\n0.0 = frozen"), Header("Time")]
     float _normalTimeRate = 1.0f;
-
-    // The ball object to be created at the beginning of runtime.
-    [SerializeField, Tooltip("The ball object to be created at the beginning of runtime."), Header("Testing")]
-    GameObject _ballPrefab;
 
     /// <summary>
     /// Resets a given ball to a chosen location, possibly also resetting status effects.
@@ -141,27 +139,56 @@ public class GameMaster : MonoBehaviour
     /// <summary>
     /// Calculates a ball's resulting score based on the number of shots made and the current hole's score modifiers.
     /// </summary>
+    /// <remarks>
+    /// Needs to account for real time taken as well.
+    /// </remarks>
     /// <param name="shotCount">The number of shots made before reaching the goal.</param>
     /// <returns>The score calculated given the number of shots and the current hole's values.</returns>
     float CalculateScore(int shotCount)
     {
-        return (float)(_currentHole.BaseScore * Math.Pow(_currentHole.ShotCountScoreFactor, shotCount));
+        return (float)(_currentHole.BaseScore * Mathf.Pow(_currentHole.ShotCountScoreFactor, shotCount));
     }
 
+    /// <summary>
+    /// Goes through the list of players and spawns a ball for each one at the given spawn points.
+    /// Uses the first unobstructed one found in the list.
+    /// </summary>
     void SpawnBalls()
     {
+        // The following operations occur for each player in the _players list.
         foreach (Player player in _players)
         {
+            // Creates a ball at the origin then moves it to an unobstructed spawnpoint by the reset function.
             GameObject playerBall = Instantiate(_ballPrefab);
             ResetBall(playerBall, SpawnPoints);
 
-            // Set the ball's name, cosmetics, aiming indicator, etc.
+            // Configures the ball's initial state. Its ID should be its new position in the _balls list.
             BallState playerBallState = playerBall.GetComponent<BallState>();
-            playerBallState.ballID = _balls.Count - 1;
+            playerBallState.ballID = _balls.Count;
             playerBallState.playerName = player.PlayerName;
 
+            // Adds the new ball to the _balls list.
             _balls.Add(playerBall);
         }
+    }
+
+    /// <summary>
+    /// Called when a ball enters the hole.
+    /// Gets relevant information to update its score and disables it.
+    /// </summary>
+    /// <param name="ballThatEnteredHole">The ball gameObject which just entered the hole.</param>
+    public void HandleGoal(GameObject ballThatEnteredHole)
+    {
+        // Gets the ball's movement component for the launch count and state component for its ID.
+        BallMovement ballThatEnteredHoleMovementComponent = ballThatEnteredHole.GetComponent<BallMovement>();
+        BallState ballThatEnteredHoleStateComponent = ballThatEnteredHole.GetComponent<BallState>();
+
+        // Calculates the player's score and assigns it to the appropriate player.
+        _players[ballThatEnteredHoleStateComponent.ballID].Score = CalculateScore(ballThatEnteredHoleMovementComponent.LaunchCount);
+        Debug.LogFormat("Score: {0}", _players[ballThatEnteredHoleStateComponent.ballID].Score);
+
+        // Deactivates the ball now that it has reached the goal.
+        ballThatEnteredHole.SetActive(false);
     }
 
     /// <summary>

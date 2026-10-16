@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d158cf6e3d24b547838d05705b9103d, type: 3}
   m_Name: TestPlayer
   m_EditorClassIdentifier: ChronoShot::Player
-  Name: Test Player
+  PlayerName: Test Player
   Score: 0
