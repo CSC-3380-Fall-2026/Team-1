@@ -116,7 +116,10 @@ public class BallMovement : MonoBehaviour
             Vector3 mousePosition = Mouse.current.position.ReadValue();
             _indicatorPosition = ScreenHelper.ScreenToWorldCoordinates(mousePosition, Camera.main);
 
-            _launchStrength = Math.Clamp(Vector2.Distance(transform.position, _indicatorPosition), 0, 5) * _forceMultiplier;
+            _launchStrength = CalculateLaunchStrength(
+                Vector2.Distance(transform.position, _indicatorPosition)
+            );
+
             _aimingIndicator.UpdateIndicator(true, _indicatorPosition, _launchStrength);
         } else if (_aimingLaunch && !CanLaunch())
         {
@@ -301,6 +304,16 @@ public class BallMovement : MonoBehaviour
     void OnCollisionExit2D(Collision2D collisionInfo)
     {
         CurrentGroundState = (!_ballRigidBody.IsTouchingLayers(LayerMask.GetMask("Ground"))) ? GroundState.Airborne : CurrentGroundState;
+    }
+
+    /// <summary>
+    /// Calculates the launch strength based on the distance dragged from the ball
+    /// </summary>
+    /// <param name="dragDistance">The distance dragged from the ball</param>
+    /// <returns>The calculated launch strength</returns>
+    public float CalculateLaunchStrength(float dragDistance)
+    {
+        return Math.Clamp(dragDistance, 0, 5) * _forceMultiplier;
     }
 
     /// <summary>
