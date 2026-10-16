@@ -164,8 +164,8 @@ public class GameMaster : MonoBehaviour
 
             // Configures the ball's initial state. Its ID should be its new position in the _balls list.
             BallState playerBallState = playerBall.GetComponent<BallState>();
-            playerBallState.ballID = _balls.Count;
-            playerBallState.playerName = player.PlayerName;
+            playerBallState.BallID = _balls.Count;
+            playerBallState.PlayerName = player.PlayerName;
 
             // Adds the new ball to the _balls list.
             _balls.Add(playerBall);
@@ -184,8 +184,8 @@ public class GameMaster : MonoBehaviour
         BallState ballThatEnteredHoleStateComponent = ballThatEnteredHole.GetComponent<BallState>();
 
         // Calculates the player's score and assigns it to the appropriate player.
-        _players[ballThatEnteredHoleStateComponent.ballID].Score = CalculateScore(ballThatEnteredHoleMovementComponent.LaunchCount);
-        Debug.LogFormat("Score: {0}", _players[ballThatEnteredHoleStateComponent.ballID].Score);
+        _players[ballThatEnteredHoleStateComponent.BallID].Score = CalculateScore(ballThatEnteredHoleMovementComponent.LaunchCount);
+        Debug.LogFormat("Score: {0}", _players[ballThatEnteredHoleStateComponent.BallID].Score);
 
         // Deactivates the ball now that it has reached the goal.
         ballThatEnteredHole.SetActive(false);
