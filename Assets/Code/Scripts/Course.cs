@@ -3,7 +3,7 @@ using UnityEngine;
 /// <summary>
 /// An aggregator of holes and information relevant to them.
 /// </summary>
-[CreateAssetMenu(fileName = "Course", menuName = "ChronoShot/Course")]
+[CreateAssetMenu(fileName = "New Course", menuName = "ChronoShot/Course")]
 
 public class Course : ScriptableObject
 {

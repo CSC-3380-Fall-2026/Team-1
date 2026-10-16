@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 /// <summary>
 /// Contains information about an individual player.
@@ -6,7 +7,8 @@ using System;
 /// <remarks>
 /// Will contain the player's customization choices.
 /// </remarks>
-public class Player
+[CreateAssetMenu(fileName = "New Player", menuName = "ChronoShot/Player")]
+public class Player : ScriptableObject
 {
     // The player's name.
     public String Name;
@@ -16,4 +18,10 @@ public class Player
 
     // Later, a reference to a ScriptableObject with cosmetic choices.
     // Maybe a reference to a settings object for player-specific settings.
+
+    // Constructor. Only needs to set the name for now.
+    public Player(String playerName)
+    {
+        Name = playerName;
+    }
 }

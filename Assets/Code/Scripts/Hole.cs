@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// Contains information about a hole in a course.
 /// </summary>
-[CreateAssetMenu(fileName = "Hole", menuName = "ChronoShot/Hole")]
+[CreateAssetMenu(fileName = "New Hole", menuName = "ChronoShot/Hole")]
 public class Hole : ScriptableObject
 {
     // The scene containing the layout of the hole.

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using UnityEditor.EditorTools;
 using UnityEngine;
 
 /// <summary>
@@ -15,12 +17,20 @@ public class GameMaster : MonoBehaviour
         private set;
     }
 
+    // For testing purposes, the current hole being played.
     [SerializeField]
     Hole _currentHole;
 
-    // A list of game objects whose locations will be used as reset points.
-    [Tooltip("A list of game objects whose locations will be used as reset points."), Header("Ball Reset")]
-    public GameObject[] ResetPoints;
+    // The players in the current game.
+    [SerializeField, Tooltip("A list of the players in the current game.")]
+    List<Player> _players;
+
+    // The balls in the current map. Ball index should match player index.
+    List<GameObject> _balls = new List<GameObject>();
+
+    // A list of reset points whose locations will be used as reset points.
+    [Tooltip("A list of reset points whose locations will be used as spawn points."), Header("Ball Reset")]
+    public GameObject[] SpawnPoints;
 
     // Objects in these layers will be considered to be obstructing the reset point.
     [Tooltip("Objects in these layers will be considered to be obstructing the reset point.")]
@@ -138,6 +148,19 @@ public class GameMaster : MonoBehaviour
         return (float)(_currentHole.BaseScore * Math.Pow(_currentHole.ShotCountScoreFactor, shotCount));
     }
 
+    void SpawnBalls()
+    {
+        foreach (Player player in _players)
+        {
+            GameObject playerBall = Instantiate(_ballPrefab);
+            ResetBall(playerBall, SpawnPoints);
+
+            // Set the ball's name, cosmetics, aiming indicator, etc.
+
+            _balls.Add(playerBall);
+        }
+    }
+
     /// <summary>
     /// This function is called when the game object is instantiated, before Start() or any Update functions.
     /// Sets this instance as the singleton if there isn't one already, destroys this instance if there is.
@@ -153,11 +176,10 @@ public class GameMaster : MonoBehaviour
 
     /// <summary>
     /// Start is called once before the first execution of Update after the MonoBehaviour is created.
-    /// Currently just instantiates the ball at the origin.
+    /// Currently just spawns each player's ball.
     /// </summary>
     void Start()
     {
-        // Creates a ball based on the prefab, located at the origin and with no rotation.
-        Instantiate(_ballPrefab, Vector3.zero, Quaternion.identity);
+        SpawnBalls();
     }
 }
