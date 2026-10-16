@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor.EditorTools;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -35,8 +36,12 @@ public class BallMovement : MonoBehaviour
     [Tooltip("Only objects in these layers will apply friction to the ball."), Header("Friction")]
     public LayerMask FrictionCheckLayers;
 
+    // The number of times the ball has been launched. Reset every hole.
+    [Tooltip("The number of times the ball has been launched."), Header ("Launching")]
+    public int LaunchCount = 0;
+
     // The minimum velocity at which the ball will be considered to be moving.
-    [SerializeField, Tooltip("The minimum velocity at which the ball will be considered to be moving."), Header("Launching")]
+    [SerializeField, Tooltip("The minimum velocity at which the ball will be considered to be moving.")]
     float _movementThreshold = 0.2f;
 
     // The ball's rigidbody component handles its physics interactions.
@@ -251,6 +256,9 @@ public class BallMovement : MonoBehaviour
 
             // Allows for checks for ground contact to deny launching until stationary+grounded to begin.
             _hasLaunched = true;
+
+            // Increments the ball's launch count.
+            LaunchCount++;
         }
     }
 
