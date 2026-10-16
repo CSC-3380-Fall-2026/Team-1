@@ -1,13 +1,15 @@
-using TextMateSharp.Themes;
+using UnityEngine;
 
 /// <summary>
 /// An aggregator of holes and information relevant to them.
 /// </summary>
-public class Course
+[CreateAssetMenu(fileName = "Course", menuName = "ChronoShot/Course")]
+
+public class Course : ScriptableObject
 {
     // The list of holes this course contains.
     public Hole[] Holes;
 
     // The difficulty level of the course. Higher is harder.
-    public int Difficulty;
+    public int Difficulty = 1;
 }
