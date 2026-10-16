@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -12,4 +13,7 @@ public class BallState : MonoBehaviour
     // The position of this ball in the GameMaster's ball list (therefore, also player list).
     [Tooltip("The position of this ball in the GameMaster's balls list.")]
     public int ballID;
+
+    // The name of the player who controls this ball.
+    public String playerName;
 }
