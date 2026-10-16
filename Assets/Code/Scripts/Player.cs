@@ -11,7 +11,7 @@ using UnityEngine;
 public class Player : ScriptableObject
 {
     // The player's name.
-    public String Name;
+    public String PlayerName;
 
     // The player's score on the current hole.
     public float Score;
@@ -22,6 +22,6 @@ public class Player : ScriptableObject
     // Constructor. Only needs to set the name for now.
     public Player(String playerName)
     {
-        Name = playerName;
+        PlayerName = playerName;
     }
 }

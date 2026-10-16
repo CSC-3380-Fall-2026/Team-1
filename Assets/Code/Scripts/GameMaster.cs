@@ -156,6 +156,9 @@ public class GameMaster : MonoBehaviour
             ResetBall(playerBall, SpawnPoints);
 
             // Set the ball's name, cosmetics, aiming indicator, etc.
+            BallState playerBallState = playerBall.GetComponent<BallState>();
+            playerBallState.ballID = _balls.Count - 1;
+            playerBallState.playerName = player.PlayerName;
 
             _balls.Add(playerBall);
         }
