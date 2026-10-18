@@ -203,9 +203,27 @@ public class GameMaster : MonoBehaviour
         BallMovement currentPlayerBallMovementComponent = _balls[_currentPlayerTurn].GetComponent<BallMovement>();
         currentPlayerBallMovementComponent.enabled = false;
 
-        // Increments the reference to the ID of the player whose turn it is, looping back to 0 if it exceeds the
-        // total number of players. The ID is the player's position on the players list.
-        _currentPlayerTurn = (_currentPlayerTurn + 1) % _players.Count;
+        // Tracks whether any active ball was found in the balls list.
+        bool anyBallsActive = false;
+
+        // Loops through the balls list once to handle scenario where there is no active ball to switch turn to.
+        for (int i = 0; i < _balls.Count; i++)
+        {
+            // Makes the next player on the list the one whose turn it is. Loops to 0 if end reached.
+            _currentPlayerTurn = (_currentPlayerTurn + 1) % _players.Count;
+
+            // Exits the loop if any active ball is found.
+            if (_balls[_currentPlayerTurn].activeSelf)
+            {
+                anyBallsActive = true;
+                break;
+            }
+        }
+
+        // It should never be the case that NextTurn is called while no balls are active.
+        if (!anyBallsActive)
+            Debug.LogWarning("No balls are active.\nIf not all have reached goal, something is wrong.");
+
 
         // Enables the ball movement component of the ball controlled by the player whose turn is beginning.
         BallMovement nextPlayerBallMovementComponent = _balls[_currentPlayerTurn].GetComponent<BallMovement>();
@@ -229,6 +247,10 @@ public class GameMaster : MonoBehaviour
 
         // Deactivates the ball now that it has reached the goal.
         ballThatEnteredHole.SetActive(false);
+
+        // Changes turn to the next on the list if it was this ball's turn.
+        if (ballThatEnteredHoleStateComponent.BallID == _currentPlayerTurn)
+            NextTurn();
     }
 
     /// <summary>
