@@ -4,7 +4,6 @@ using UnityEngine;
 /// An aggregator of holes and information relevant to them.
 /// </summary>
 [CreateAssetMenu(fileName = "New Course", menuName = "ChronoShot/Course")]
-
 public class Course : ScriptableObject
 {
     // The list of holes this course contains.
