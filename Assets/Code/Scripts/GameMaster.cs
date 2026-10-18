@@ -23,6 +23,9 @@ public class GameMaster : MonoBehaviour
     [SerializeField, Tooltip("A list of the players in the current game.")]
     List<Player> _players;
 
+    // The index of the player whose turn it is to perform actions in the players list.
+    int _currentPlayerTurn = 0;
+
     // The balls in the current map. Ball index should match player index.
     List<GameObject> _balls = new List<GameObject>();
 
@@ -153,6 +156,9 @@ public class GameMaster : MonoBehaviour
     /// Goes through the list of players and spawns a ball for each one at the given spawn points.
     /// Uses the first unobstructed one found in the list.
     /// </summary>
+    /// <remarks>
+    /// Every ball after the first will have its movement component disabled: not its turn.
+    /// </remarks>
     void SpawnBalls()
     {
         // The following operations occur for each player in the _players list.
@@ -167,9 +173,24 @@ public class GameMaster : MonoBehaviour
             playerBallState.BallID = _balls.Count;
             playerBallState.PlayerName = player.PlayerName;
 
+            // Disables the movement component of every ball that isn't the first on the list.
+            BallMovement playerBallMovement = playerBall.GetComponent<BallMovement>();
+            playerBallMovement.enabled = playerBallState.BallID == 0;
+
             // Adds the new ball to the _balls list.
             _balls.Add(playerBall);
         }
+    }
+
+    public void NextTurn()
+    {
+        BallMovement currentPlayerBallMovementComponent = _balls[_currentPlayerTurn].GetComponent<BallMovement>();
+        currentPlayerBallMovementComponent.enabled = false;
+
+        _currentPlayerTurn = (_currentPlayerTurn + 1) % _players.Count;
+
+        BallMovement nextPlayerBallMovementComponent = _balls[_currentPlayerTurn].GetComponent<BallMovement>();
+        nextPlayerBallMovementComponent.enabled = true;
     }
 
     /// <summary>
