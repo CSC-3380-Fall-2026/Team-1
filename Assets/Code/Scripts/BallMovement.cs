@@ -155,6 +155,9 @@ public class BallMovement : MonoBehaviour
             // _hasHitGroundDuringCurrentLaunch is only set to true on ground collision if this value is true as well.
             // Done this way to prevent redundant operations and premature setting of _hasHitGroundDuringCurrentLaunch.
             _hasLaunched = false;
+
+            // Now that the ball has become stationary and grounded after its launch, end the player's turn, start the next.
+            GameMaster.Instance.NextTurn();
         }
     }
 

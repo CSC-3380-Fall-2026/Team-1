@@ -23,6 +23,9 @@ public class GameMaster : MonoBehaviour
     [SerializeField, Tooltip("A list of the players in the current game.")]
     List<Player> _players;
 
+    // The index of the player whose turn it is to perform actions in the players list.
+    int _currentPlayerTurn = 0;
+
     // The balls in the current map. Ball index should match player index.
     List<GameObject> _balls = new List<GameObject>();
 
@@ -50,7 +53,8 @@ public class GameMaster : MonoBehaviour
     /// <param name="ballToBeReset">A reference to the ball we would like to reset.</param>
     /// <param name="resetLocationObjects">GameObjects whose locations are candidates for the reset.</param>
     /// <param name="removeStatusEffects">Whether or not we will remove any status effects currently affecting the ball.</param>
-    public void ResetBall(GameObject ballToBeReset, GameObject[] resetLocationObjects, bool removeStatusEffects = true)
+    /// <param name="startFromIndex">Only spawn points on or after this index on the list will be considered.</param>
+    public void ResetBall(GameObject ballToBeReset, GameObject[] resetLocationObjects, bool removeStatusEffects = true, int startFromIndex = 0)
     {
         // When we add a ball status component, reset its status effects.
         if (removeStatusEffects);
@@ -61,8 +65,11 @@ public class GameMaster : MonoBehaviour
         // Tracks whether or not any reset location is unoccupied so that the ball can be placed there.
         bool resetLocationClear = false;
 
+        // Makes a subarray of the reset location objects starting from the given index.
+        GameObject[] consideredResetLocationObjects = resetLocationObjects[startFromIndex..];
+
         // Checks if each reset location is unobstructed.
-        foreach (GameObject resetLocationObject in resetLocationObjects)
+        foreach (GameObject resetLocationObject in consideredResetLocationObjects)
         {
             // Needed to determine if the collider is touching anything on the layers we're checking.
             CircleCollider2D resetLocationObjectCollider = resetLocationObject.GetComponent<CircleCollider2D>();
@@ -153,23 +160,56 @@ public class GameMaster : MonoBehaviour
     /// Goes through the list of players and spawns a ball for each one at the given spawn points.
     /// Uses the first unobstructed one found in the list.
     /// </summary>
+    /// <remarks>
+    /// Every ball after the first will have its movement component disabled: not its turn.
+    /// </remarks>
     void SpawnBalls()
     {
         // The following operations occur for each player in the _players list.
-        foreach (Player player in _players)
+        for (int i = 0; i < _players.Count; i++)
         {
-            // Creates a ball at the origin then moves it to an unobstructed spawnpoint by the reset function.
+            // To prevent constant re-referencing.
+            Player player = _players[i];
+
+            // Creates a ball at the origin.
             GameObject playerBall = Instantiate(_ballPrefab);
-            ResetBall(playerBall, SpawnPoints);
 
             // Configures the ball's initial state. Its ID should be its new position in the _balls list.
             BallState playerBallState = playerBall.GetComponent<BallState>();
             playerBallState.BallID = _balls.Count;
             playerBallState.PlayerName = player.PlayerName;
 
+            // Moves the new ball to an unobstructed spawnpoint by the reset function.
+            // Every ball will be spawned before the next physics update, so reset cannot check for obstruction.
+            // To get around this, spawnpoints obstructed by balls just spawned are manually ignored.
+            ResetBall(playerBall, SpawnPoints, true, i);
+
+            // Disables the movement component of every ball that isn't the first on the list.
+            BallMovement playerBallMovement = playerBall.GetComponent<BallMovement>();
+            playerBallMovement.enabled = playerBallState.BallID == 0;
+
             // Adds the new ball to the _balls list.
             _balls.Add(playerBall);
         }
+    }
+
+    /// <summary>
+    /// Handles ending the current player's turn and beginning the next.
+    /// Currently disables the movement of the ball ending its turn and enables that of the ball beginning its own.
+    /// </summary>
+    public void NextTurn()
+    {
+        // Disables the ball movement component of the ball controlled by the player whose turn is ending.
+        BallMovement currentPlayerBallMovementComponent = _balls[_currentPlayerTurn].GetComponent<BallMovement>();
+        currentPlayerBallMovementComponent.enabled = false;
+
+        // Increments the reference to the ID of the player whose turn it is, looping back to 0 if it exceeds the
+        // total number of players. The ID is the player's position on the players list.
+        _currentPlayerTurn = (_currentPlayerTurn + 1) % _players.Count;
+
+        // Enables the ball movement component of the ball controlled by the player whose turn is beginning.
+        BallMovement nextPlayerBallMovementComponent = _balls[_currentPlayerTurn].GetComponent<BallMovement>();
+        nextPlayerBallMovementComponent.enabled = true;
     }
 
     /// <summary>
