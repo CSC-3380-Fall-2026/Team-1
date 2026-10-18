@@ -53,7 +53,8 @@ public class GameMaster : MonoBehaviour
     /// <param name="ballToBeReset">A reference to the ball we would like to reset.</param>
     /// <param name="resetLocationObjects">GameObjects whose locations are candidates for the reset.</param>
     /// <param name="removeStatusEffects">Whether or not we will remove any status effects currently affecting the ball.</param>
-    public void ResetBall(GameObject ballToBeReset, GameObject[] resetLocationObjects, bool removeStatusEffects = true)
+    /// <param name="startFromIndex">Only spawn points on or after this index on the list will be considered.</param>
+    public void ResetBall(GameObject ballToBeReset, GameObject[] resetLocationObjects, bool removeStatusEffects = true, int startFromIndex = 0)
     {
         // When we add a ball status component, reset its status effects.
         if (removeStatusEffects);
@@ -64,8 +65,11 @@ public class GameMaster : MonoBehaviour
         // Tracks whether or not any reset location is unoccupied so that the ball can be placed there.
         bool resetLocationClear = false;
 
+        // Makes a subarray of the reset location objects starting from the given index.
+        GameObject[] consideredResetLocationObjects = resetLocationObjects[startFromIndex..];
+
         // Checks if each reset location is unobstructed.
-        foreach (GameObject resetLocationObject in resetLocationObjects)
+        foreach (GameObject resetLocationObject in consideredResetLocationObjects)
         {
             // Needed to determine if the collider is touching anything on the layers we're checking.
             CircleCollider2D resetLocationObjectCollider = resetLocationObject.GetComponent<CircleCollider2D>();
@@ -162,16 +166,23 @@ public class GameMaster : MonoBehaviour
     void SpawnBalls()
     {
         // The following operations occur for each player in the _players list.
-        foreach (Player player in _players)
+        for (int i = 0; i < _players.Count; i++)
         {
-            // Creates a ball at the origin then moves it to an unobstructed spawnpoint by the reset function.
+            // To prevent constant re-referencing.
+            Player player = _players[i];
+
+            // Creates a ball at the origin.
             GameObject playerBall = Instantiate(_ballPrefab);
-            ResetBall(playerBall, SpawnPoints);
 
             // Configures the ball's initial state. Its ID should be its new position in the _balls list.
             BallState playerBallState = playerBall.GetComponent<BallState>();
             playerBallState.BallID = _balls.Count;
             playerBallState.PlayerName = player.PlayerName;
+
+            // Moves the new ball to an unobstructed spawnpoint by the reset function.
+            // Every ball will be spawned before the next physics update, so reset cannot check for obstruction.
+            // To get around this, spawnpoints obstructed by balls just spawned are manually ignored.
+            ResetBall(playerBall, SpawnPoints, true, i);
 
             // Disables the movement component of every ball that isn't the first on the list.
             BallMovement playerBallMovement = playerBall.GetComponent<BallMovement>();
