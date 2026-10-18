@@ -1,6 +1,6 @@
 # ChronoShot : Team 1
 # Members
-Project Manager: [Name] ([GitHub Name])\
+Project Manager: Eli (Efghd)\
 Communications Lead: Daniel (dmelen3)\
 Git Master: Tega (isometrc)\
 Design Lead: [Name] ([GitHub Name])\
