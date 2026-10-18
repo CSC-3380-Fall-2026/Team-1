@@ -182,13 +182,21 @@ public class GameMaster : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Handles ending the current player's turn and beginning the next.
+    /// Currently disables the movement of the ball ending its turn and enables that of the ball beginning its own.
+    /// </summary>
     public void NextTurn()
     {
+        // Disables the ball movement component of the ball controlled by the player whose turn is ending.
         BallMovement currentPlayerBallMovementComponent = _balls[_currentPlayerTurn].GetComponent<BallMovement>();
         currentPlayerBallMovementComponent.enabled = false;
 
+        // Increments the reference to the ID of the player whose turn it is, looping back to 0 if it exceeds the
+        // total number of players. The ID is the player's position on the players list.
         _currentPlayerTurn = (_currentPlayerTurn + 1) % _players.Count;
 
+        // Enables the ball movement component of the ball controlled by the player whose turn is beginning.
         BallMovement nextPlayerBallMovementComponent = _balls[_currentPlayerTurn].GetComponent<BallMovement>();
         nextPlayerBallMovementComponent.enabled = true;
     }
