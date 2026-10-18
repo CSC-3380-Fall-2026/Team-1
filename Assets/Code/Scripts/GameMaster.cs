@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -14,17 +15,31 @@ public class GameMaster : MonoBehaviour
         private set;
     }
 
-    // A list of game objects whose locations will be used as reset points.
-    [Tooltip("A list of game objects whose locations will be used as reset points."), Header("Ball Reset")]
-    public GameObject[] ResetPoints;
+    // For testing purposes, the current hole being played.
+    [SerializeField]
+    Hole _currentHole;
+
+    // The players in the current game.
+    [SerializeField, Tooltip("A list of the players in the current game.")]
+    List<Player> _players;
+
+    // The balls in the current map. Ball index should match player index.
+    List<GameObject> _balls = new List<GameObject>();
+
+     // The ball object to be created at the beginning of the round.
+    [SerializeField, Tooltip("The ball object to be created at the beginning of the round.")]
+    GameObject _ballPrefab;
+
+    // A list of reset points whose locations will be used as reset points.
+    [Tooltip("A list of reset points whose locations will be used as spawn points."), Header("Ball Reset")]
+    public GameObject[] SpawnPoints;
 
     // Objects in these layers will be considered to be obstructing the reset point.
     [Tooltip("Objects in these layers will be considered to be obstructing the reset point.")]
     public LayerMask ResetObstructionLayers;
 
-    // The ball object to be created at the beginning of runtime.
-    [SerializeField, Tooltip("The ball object to be created at the beginning of runtime."), Header("Testing")]
-    GameObject _ballPrefab;
+    [SerializeField, Tooltip("The normal rate of passage of time.\n1.0 = regular\n0.0 = frozen"), Header("Time")]
+    float _normalTimeRate = 1.0f;
 
     /// <summary>
     /// Resets a given ball to a chosen location, possibly also resetting status effects.
@@ -33,7 +48,7 @@ public class GameMaster : MonoBehaviour
     /// No status effects currently, but assuming a BallStatus component is added with said behavior, will call its reset function.
     /// </remarks>
     /// <param name="ballToBeReset">A reference to the ball we would like to reset.</param>
-    /// <param name="resetLocation">The coordinates of the place we would like to reset the ball to.</param>
+    /// <param name="resetLocationObjects">GameObjects whose locations are candidates for the reset.</param>
     /// <param name="removeStatusEffects">Whether or not we will remove any status effects currently affecting the ball.</param>
     public void ResetBall(GameObject ballToBeReset, GameObject[] resetLocationObjects, bool removeStatusEffects = true)
     {
@@ -84,6 +99,96 @@ public class GameMaster : MonoBehaviour
 
         // Sets the ball's position to that of the first unobstructed reset point found.
         ballToBeReset.transform.position = resetLocation;
+
+        // Resets ChronoShot so no time dilation carries over after the ball is reset.
+        ResetChronoShot();
+    }
+    
+    /// <summary>
+    /// Resets ChronoShot to its default inactive state.
+    /// </summary>
+    public void ResetChronoShot()
+    {
+        SetTimeRate();
+    }
+
+    /// <summary>
+    /// Sets the rate of passage of time to a given percentage of its normal speed.
+    /// </summary>
+    /// <remarks>
+    /// It is possible that each ball's time-slow amount could vary (powerups, obstacles, etc).
+    /// To account for that, let whoever calls it (ball) set the rate rather than defining a slow amount variable on the GameMaster.
+    /// </remarks>
+    /// <param name="newTimeRate">
+    /// The new rate at which time will pass.
+    /// 1.0f = normal, 0.0f = frozen.
+    /// If left empty (or set to -1.0f), will be set to normal value defined in GameMaster.
+    /// </param>
+    public void SetTimeRate(float newTimeRate = -1.0f)
+    {
+        // If no value given (or -1.0f) set the rate to our set value (in case we decide on a different default).
+        if (newTimeRate == -1.0f)
+        {
+            Time.timeScale = _normalTimeRate;
+            return;
+        }
+
+        Time.timeScale = newTimeRate;
+    }
+
+    /// <summary>
+    /// Calculates a ball's resulting score based on the number of shots made and the current hole's score modifiers.
+    /// </summary>
+    /// <remarks>
+    /// Needs to account for real time taken as well.
+    /// </remarks>
+    /// <param name="shotCount">The number of shots made before reaching the goal.</param>
+    /// <returns>The score calculated given the number of shots and the current hole's values.</returns>
+    float CalculateScore(int shotCount)
+    {
+        return (float)(_currentHole.BaseScore * Mathf.Pow(_currentHole.ShotCountScoreFactor, shotCount));
+    }
+
+    /// <summary>
+    /// Goes through the list of players and spawns a ball for each one at the given spawn points.
+    /// Uses the first unobstructed one found in the list.
+    /// </summary>
+    void SpawnBalls()
+    {
+        // The following operations occur for each player in the _players list.
+        foreach (Player player in _players)
+        {
+            // Creates a ball at the origin then moves it to an unobstructed spawnpoint by the reset function.
+            GameObject playerBall = Instantiate(_ballPrefab);
+            ResetBall(playerBall, SpawnPoints);
+
+            // Configures the ball's initial state. Its ID should be its new position in the _balls list.
+            BallState playerBallState = playerBall.GetComponent<BallState>();
+            playerBallState.BallID = _balls.Count;
+            playerBallState.PlayerName = player.PlayerName;
+
+            // Adds the new ball to the _balls list.
+            _balls.Add(playerBall);
+        }
+    }
+
+    /// <summary>
+    /// Called when a ball enters the hole.
+    /// Gets relevant information to update its score and disables it.
+    /// </summary>
+    /// <param name="ballThatEnteredHole">The ball gameObject which just entered the hole.</param>
+    public void HandleGoal(GameObject ballThatEnteredHole)
+    {
+        // Gets the ball's movement component for the launch count and state component for its ID.
+        BallMovement ballThatEnteredHoleMovementComponent = ballThatEnteredHole.GetComponent<BallMovement>();
+        BallState ballThatEnteredHoleStateComponent = ballThatEnteredHole.GetComponent<BallState>();
+
+        // Calculates the player's score and assigns it to the appropriate player.
+        _players[ballThatEnteredHoleStateComponent.BallID].Score = CalculateScore(ballThatEnteredHoleMovementComponent.LaunchCount);
+        Debug.LogFormat("Score: {0}", _players[ballThatEnteredHoleStateComponent.BallID].Score);
+
+        // Deactivates the ball now that it has reached the goal.
+        ballThatEnteredHole.SetActive(false);
     }
 
     /// <summary>
@@ -101,10 +206,10 @@ public class GameMaster : MonoBehaviour
 
     /// <summary>
     /// Start is called once before the first execution of Update after the MonoBehaviour is created.
-    /// Currently just instantiates the ball at the origin.
+    /// Currently just spawns each player's ball.
     /// </summary>
     void Start()
     {
-        Instantiate(_ballPrefab, Vector3.zero, Quaternion.identity);
+        SpawnBalls();
     }
 }
