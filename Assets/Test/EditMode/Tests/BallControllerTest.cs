@@ -6,14 +6,19 @@ using UnityEngine;
 /// </summary>
 public class BallControllerTest
 {
-    private GameObject _gameMasterObject;
-    private GameMaster _gameMaster;
-    private GameObject _ball;
-    private Rigidbody2D _ballRigidbody;
-    private CircleCollider2D _ballCollider;
-    private GameObject _resetPoint;
-    private CircleCollider2D _resetPointCollider;
 
+    // References to objects and components for testing
+    GameObject _gameMasterObject;
+    GameMaster _gameMaster;
+    GameObject _ball;
+    Rigidbody2D _ballRigidbody;
+    CircleCollider2D _ballCollider;
+    GameObject _resetPoint;
+    CircleCollider2D _resetPointCollider;
+
+    /// <summary>
+    /// Creates the GameMaster, ball, and reset point used for each test
+    /// </summary>
     [SetUp]
     public void SetUp()
     {
