@@ -29,13 +29,20 @@ public class TurnSystemTest
     [SetUp]
     public void SetUp()
     {
+
+        // This initializes the GameMaster used for turn system testing
         _gameMasterObject = new GameObject("GameMaster");
         _gameMaster = _gameMasterObject.AddComponent<GameMaster>();
+
+        // Initializes Player 1
         _player1 = ScriptableObject.CreateInstance<Player>();
         _player1.PlayerName = "Player 1";
 
+        // Initializes Player 2
         _player2 = ScriptableObject.CreateInstance<Player>();
         _player2.PlayerName = "Player 2";
+
+        // Initializes both players owned balls assigns their player info
         _ball1 = new GameObject("Ball 1");
         _ball1.AddComponent<Rigidbody2D>();
         _ballMovement1 = _ball1.AddComponent<BallMovement>();
@@ -49,6 +56,7 @@ public class TurnSystemTest
         _ballState2.BallID = 1;
         _ballState2.PlayerName = _player2.PlayerName;
 
+        // Gets access to the GameMaster's private player and ball lists for testing
         FieldInfo playerField = typeof(GameMaster).GetField(
         "_players", BindingFlags.NonPublic | BindingFlags.Instance
         );
@@ -57,11 +65,13 @@ public class TurnSystemTest
             "_balls", BindingFlags.NonPublic | BindingFlags.Instance
         );
 
+        // Populates the GameMaster witht eh two test players and their corresponding balls
         playerField.SetValue(
             _gameMaster,
             new List<Player> { _player1, _player2 }
         );
 
+        // Sets Player 1 as the starting player by enabling only their ball movement
         ballsField.SetValue(
             _gameMaster,
             new List<GameObject> { _ball1, _ball2 }
