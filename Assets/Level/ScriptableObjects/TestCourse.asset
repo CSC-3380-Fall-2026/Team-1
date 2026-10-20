@@ -12,5 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a1325f807cf3434aa5f4feab51b7673, type: 3}
   m_Name: TestCourse
   m_EditorClassIdentifier: ChronoShot::Course
-  Holes: []
+  Holes:
+  - {fileID: 11400000, guid: e9b4376227e8dc24a91387430f188ca1, type: 2}
   Difficulty: 0

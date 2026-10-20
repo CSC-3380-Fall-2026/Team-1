@@ -17,7 +17,13 @@ public class GameMaster : MonoBehaviour
 
     // For testing purposes, the current hole being played.
     [SerializeField]
-    Hole _currentHole;
+    Course _currentCourse;
+
+    // The index hole currently being played on the current course's hole list.
+    int _currentHoleID = 0;
+
+    // The hole referenced by the current hole ID.
+    Hole _currentHole {get => _currentCourse.Holes[_currentHoleID];}
 
     // The players in the current game.
     [SerializeField, Tooltip("A list of the players in the current game.")]
