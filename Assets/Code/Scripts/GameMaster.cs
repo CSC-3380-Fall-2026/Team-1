@@ -19,7 +19,7 @@ public class GameMaster : MonoBehaviour
     [SerializeField]
     Course _currentCourse;
 
-    // The index hole currently being played on the current course's hole list.
+    // The index of the hole currently being played on the current course's hole list.
     int _currentHoleID = 0;
 
     // The hole referenced by the current hole ID.
