@@ -15,9 +15,15 @@ public class GameMaster : MonoBehaviour
         private set;
     }
 
-    // For testing purposes, the current hole being played.
+    // For testing purposes, the current course being played.
     [SerializeField]
-    Hole _currentHole;
+    Course _currentCourse;
+
+    // The index of the hole currently being played on the current course's hole list.
+    int _currentHoleID = 0;
+
+    // The hole referenced by the current hole ID.
+    Hole _currentHole {get => _currentCourse.Holes[_currentHoleID];}
 
     // The players in the current game.
     [SerializeField, Tooltip("A list of the players in the current game.")]
@@ -196,6 +202,7 @@ public class GameMaster : MonoBehaviour
     /// <summary>
     /// Handles ending the current player's turn and beginning the next.
     /// Currently disables the movement of the ball ending its turn and enables that of the ball beginning its own.
+    /// Moves to next hole if all balls have entered the cup.
     /// </summary>
     public void NextTurn()
     {
@@ -220,9 +227,10 @@ public class GameMaster : MonoBehaviour
             }
         }
 
-        // It should never be the case that NextTurn is called while no balls are active.
+        // If no balls are active, then all should have entered the cup.
+        // Call function that handles moving to the next hole.
         if (!anyBallsActive)
-            Debug.LogWarning("No balls are active.\nIf not all have reached goal, something is wrong.");
+            Debug.Log("All balls have entered the cup. Move to the next hole.");
 
 
         // Enables the ball movement component of the ball controlled by the player whose turn is beginning.
@@ -241,8 +249,8 @@ public class GameMaster : MonoBehaviour
         BallMovement ballThatEnteredHoleMovementComponent = ballThatEnteredHole.GetComponent<BallMovement>();
         BallState ballThatEnteredHoleStateComponent = ballThatEnteredHole.GetComponent<BallState>();
 
-        // Calculates the player's score and assigns it to the appropriate player.
-        _players[ballThatEnteredHoleStateComponent.BallID].Score = CalculateScore(ballThatEnteredHoleMovementComponent.LaunchCount);
+        // Calculates the player's new score and assigns it to the appropriate player.
+        _players[ballThatEnteredHoleStateComponent.BallID].Score += CalculateScore(ballThatEnteredHoleMovementComponent.LaunchCount);
         Debug.LogFormat("Score: {0}", _players[ballThatEnteredHoleStateComponent.BallID].Score);
 
         // Deactivates the ball now that it has reached the goal.

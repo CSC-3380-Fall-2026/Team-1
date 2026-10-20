@@ -806,7 +806,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6ee600c8ac31ec409535a9a71b24e70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  _currentHole: {fileID: 11400000, guid: e9b4376227e8dc24a91387430f188ca1, type: 2}
+  _currentCourse: {fileID: 11400000, guid: d2a5c11b0027b7a4e9b4fb333c38cf99, type: 2}
   _players:
   - {fileID: 11400000, guid: 43e29bbe6991f0543b8d0b1c87b7a677, type: 2}
   - {fileID: 11400000, guid: 23e450859584b6043979e27a52775b8a, type: 2}
