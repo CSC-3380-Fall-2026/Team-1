@@ -15,7 +15,7 @@ public class GameMaster : MonoBehaviour
         private set;
     }
 
-    // For testing purposes, the current hole being played.
+    // For testing purposes, the current course being played.
     [SerializeField]
     Course _currentCourse;
 
