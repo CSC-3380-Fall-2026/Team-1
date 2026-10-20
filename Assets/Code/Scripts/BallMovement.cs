@@ -10,6 +10,7 @@ using UnityEngine.InputSystem;
 /// Needs visualization, like a line to signal active dragging.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(StrokeCounter))]
 public class BallMovement : MonoBehaviour
 {
     // Defines states describing whether the ball is in contact with an object on the "Ground" layer or not.
@@ -46,6 +47,9 @@ public class BallMovement : MonoBehaviour
 
     // The ball's rigidbody component handles its physics interactions.
     Rigidbody2D _ballRigidBody;
+
+    // Tracks the number valid strokes performed by this ball.
+    StrokeCounter _strokeCounter; 
 
     // A reference to the ball's child object's component, that handles drawing the aiming indicator.
     AimingIndicator _aimingIndicator;
@@ -94,6 +98,7 @@ public class BallMovement : MonoBehaviour
         // Initializes component references.
         _ballRigidBody = GetComponent<Rigidbody2D>();
         _aimingIndicator = GetComponentInChildren<AimingIndicator>();
+        _strokeCounter = GetComponent<StrokeCounter>();
 
         // Sets reference to the Input Action assigned to a mouse click or one finger touch.
         _clickTouchAction = InputSystem.actions.FindAction("ClickTouch");
@@ -262,6 +267,9 @@ public class BallMovement : MonoBehaviour
 
             // Increments the ball's launch count.
             LaunchCount++;
+
+            // Records a valid shot as a stroke.
+            _strokeCounter.AddStroke();
         }
     }
 
