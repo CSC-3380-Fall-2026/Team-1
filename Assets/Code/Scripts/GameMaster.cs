@@ -249,8 +249,8 @@ public class GameMaster : MonoBehaviour
         BallMovement ballThatEnteredHoleMovementComponent = ballThatEnteredHole.GetComponent<BallMovement>();
         BallState ballThatEnteredHoleStateComponent = ballThatEnteredHole.GetComponent<BallState>();
 
-        // Calculates the player's score and assigns it to the appropriate player.
-        _players[ballThatEnteredHoleStateComponent.BallID].Score = CalculateScore(ballThatEnteredHoleMovementComponent.LaunchCount);
+        // Calculates the player's new score and assigns it to the appropriate player.
+        _players[ballThatEnteredHoleStateComponent.BallID].Score += CalculateScore(ballThatEnteredHoleMovementComponent.LaunchCount);
         Debug.LogFormat("Score: {0}", _players[ballThatEnteredHoleStateComponent.BallID].Score);
 
         // Deactivates the ball now that it has reached the goal.
