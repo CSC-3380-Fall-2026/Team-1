@@ -196,6 +196,7 @@ public class GameMaster : MonoBehaviour
     /// <summary>
     /// Handles ending the current player's turn and beginning the next.
     /// Currently disables the movement of the ball ending its turn and enables that of the ball beginning its own.
+    /// Moves to next hole if all balls have entered the cup.
     /// </summary>
     public void NextTurn()
     {
@@ -220,9 +221,10 @@ public class GameMaster : MonoBehaviour
             }
         }
 
-        // It should never be the case that NextTurn is called while no balls are active.
+        // If no balls are active, then all should have entered the cup.
+        // Call function that handles moving to the next hole.
         if (!anyBallsActive)
-            Debug.LogWarning("No balls are active.\nIf not all have reached goal, something is wrong.");
+            Debug.Log("All balls have entered the cup. Move to the next hole.");
 
 
         // Enables the ball movement component of the ball controlled by the player whose turn is beginning.
