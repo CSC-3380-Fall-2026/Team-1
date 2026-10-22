@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// A general controller of game state.
@@ -230,12 +231,42 @@ public class GameMaster : MonoBehaviour
         // If no balls are active, then all should have entered the cup.
         // Call function that handles moving to the next hole.
         if (!anyBallsActive)
-            Debug.Log("All balls have entered the cup. Move to the next hole.");
+        {
+            LoadNextHole();
+            return;
+        }
+            
 
 
         // Enables the ball movement component of the ball controlled by the player whose turn is beginning.
         BallMovement nextPlayerBallMovementComponent = _balls[_currentPlayerTurn].GetComponent<BallMovement>();
         nextPlayerBallMovementComponent.enabled = true;
+    }
+
+    /// <summary>
+    /// Advances to the next hole in the current cocurse and laods its scene
+    /// </summary>
+    void LoadNextHole()
+    {
+        // Stops progression if no course has been assigned
+        if (_currentCourse == null)
+        {
+            Debug.LogWarning("No course is assigned. Unable to load the next hole.");
+            return;
+        }
+
+        //Advances the current hole index
+        _currentHoleID++;
+
+        // Stops progression if the current hole was the final hole in the course
+        if (_currentHoleID >= _currentCourse.Holes.Length)
+        {
+            Debug.Log("All balls have entered the cup. Move to the next hole.");
+            return;
+        }
+
+        // Loads the scene associated with the next hole
+        SceneManager.LoadScene(_currentHole.Map.name);
     }
 
     /// <summary>
