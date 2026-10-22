@@ -50,6 +50,9 @@ public class GameMaster : MonoBehaviour
     [SerializeField, Tooltip("The normal rate of passage of time.\n1.0 = regular\n0.0 = frozen"), Header("Time")]
     float _normalTimeRate = 1.0f;
 
+    // This stores the normal physics timestep so the physics updates remain consistent during time dilation
+    float _normalFixedDeltaTime;
+
     /// <summary>
     /// Resets a given ball to a chosen location, possibly also resetting status effects.
     /// </summary>
@@ -139,14 +142,14 @@ public class GameMaster : MonoBehaviour
     /// </param>
     public void SetTimeRate(float newTimeRate = -1.0f)
     {
-        // If no value given (or -1.0f) set the rate to our set value (in case we decide on a different default).
+        // Uses the normal time rate when no specifc rate is provided
         if (newTimeRate == -1.0f)
-        {
-            Time.timeScale = _normalTimeRate;
-            return;
-        }
+            newTimeRate = _normalTimeRate;
 
         Time.timeScale = newTimeRate;
+
+        // This will adjust the physics timestep with the time scale to keep the physics updates smooth during time dilaton
+        Time.fixedDeltaTime = _normalFixedDeltaTime * newTimeRate;
     }
 
     /// <summary>
@@ -267,6 +270,9 @@ public class GameMaster : MonoBehaviour
     /// </summary>
     void Awake()
     {
+        // This stores Unity's default physics timestep before any time dilation is applied
+        _normalFixedDeltaTime = Time.fixedDeltaTime;
+
         // Ensures that there will only be one instance of the GameMaster at any time.
         if (Instance != null && Instance != this)
             Destroy(this);
