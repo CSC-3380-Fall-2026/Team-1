@@ -261,7 +261,7 @@ public class GameMaster : MonoBehaviour
         // Stops progression if the current hole was the final hole in the course
         if (_currentHoleID >= _currentCourse.Holes.Length)
         {
-            Debug.Log("All balls have entered the cup. Move to the next hole.");
+            Debug.Log("All players have completed the course.");
             return;
         }
 
