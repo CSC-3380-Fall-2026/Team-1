@@ -57,6 +57,11 @@ public class AimingIndicator : MonoBehaviour
         // Will be re-enabled when aiming.
         _spriteRenderer.sprite = _indicatorSprite;
         _spriteRenderer.enabled = false;
+
+        // Gets the ball movement component and subscribes to its aiming events to handle indicator updates.
+        BallMovement ballMovement = GetComponent<BallMovement>();
+        ballMovement.BallCurrentlyAiming += OnBallCurrentlyAiming;
+        ballMovement.BallStoppedAiming += OnBallStoppedAiming;
     }
 
     /// <summary>
@@ -134,5 +139,26 @@ public class AimingIndicator : MonoBehaviour
 
         // Applies the triangles to the sprite.
         _indicatorSprite.OverrideGeometry(aimingIndicatorArrowVertices, aimingIndicatorArrowTriangles);
+    }
+
+    /// <summary>
+    /// This function is subscribed to the event that occurs every frame the ball is currently being aimed.
+    /// Passes the information to the indicator update function to tell it to draw.
+    /// </summary>
+    /// <param name="indicatorWorldLocation">The world coordinates of the pointer or finger during the event call.</param>
+    /// <param name="launchStrength">The launch strength calculated by the BallMovement component during the event call.</param>
+    void OnBallCurrentlyAiming(Vector2 indicatorWorldLocation, float launchStrength)
+    {
+        UpdateIndicator(true, indicatorWorldLocation, launchStrength);
+    }
+
+    /// <summary>
+    /// This function is subscribed to the event that occurs when the ball stops being aimed.
+    /// Prevents the indicator visual from being drawn.
+    /// </summary>
+    /// <param name="successfullyLaunched">Indicates whether or not aiming stopped because the ball was launched or not.</param>
+    void OnBallStoppedAiming(bool successfullyLaunched)
+    {
+        UpdateIndicator(false);
     }
 }

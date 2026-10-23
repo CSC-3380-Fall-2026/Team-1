@@ -1,5 +1,3 @@
-using System;
-using UnityEditor.EditorTools;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -24,6 +22,27 @@ public class BallMovement : MonoBehaviour
         Stationary,
         Moving
     }
+
+    // Functions subscribed to this event will be called when the ball's turn begins.
+    public delegate void BallTurnBeganEvent();
+    public BallTurnBeganEvent BallTurnBegan;
+
+    // Functions subscribed to this event will be called when the ball's turn ends.
+    public delegate void BallTurnEndedEvent();
+    public BallTurnEndedEvent BallTurnEnded;
+
+    // Functions subscribed to this event will be called when the ball starts being aimed.
+    public delegate void BallBeganAimingEvent();
+    public BallBeganAimingEvent BallBeganAiming;
+
+    // Functions subscribed to this event will be called every frame the ball is currently being aimed.
+    public delegate void BallCurrentlyAimingEvent(Vector2 pointerWorldCoordinates = default(Vector2), float launchStrength = 0.0f);
+    public BallCurrentlyAimingEvent BallCurrentlyAiming;
+
+    // Functions subscribed to this event will be called when the ball stops being aimed.
+    // The argument indicates whether the ball was launched when the aiming stopped or not.
+    public delegate void BallStoppedAimingEvent(bool successfullyLaunched = false);
+    public BallStoppedAimingEvent BallStoppedAiming;
 
     // Describes whether the ball is in contact with an object on the "Ground" layer or not.
     public GroundState CurrentGroundState;
@@ -120,18 +139,19 @@ public class BallMovement : MonoBehaviour
                 Vector2.Distance(transform.position, _indicatorPosition)
             );
 
-            _aimingIndicator.UpdateIndicator(true, _indicatorPosition, _launchStrength);
+            // Calls any function that wants to do something every frame the ball is being aimed.
+            BallCurrentlyAiming(_indicatorPosition, _launchStrength);
         } else if (_aimingLaunch && !CanLaunch())
         {
             // Assume that if the ability to launch is lost, the ball should no longer be aimed.
             _aimingLaunch = false;
 
-            // Disables the indicator if the player is currently aiming, but loses the ability to launch.
-            _aimingIndicator.UpdateIndicator(false);
-
             // Restores the rate of passage of time to the default value.
             // Maybe move time-rate adjustment to UpdateIndicator function to simplify.
             GameMaster.Instance.SetTimeRate();
+
+            // Calls any function that wants to do something when the ball stops being aimed.
+            BallStoppedAiming(false);
         }
 
         // Sets the ball's motion state to moving if its velocity is greater than our set threshold, stationary otherwise.
@@ -150,6 +170,9 @@ public class BallMovement : MonoBehaviour
             // _hasHitGroundDuringCurrentLaunch is only set to true on ground collision if this value is true as well.
             // Done this way to prevent redundant operations and premature setting of _hasHitGroundDuringCurrentLaunch.
             _hasLaunched = false;
+
+            // Calls every function that wants to do something when the ball's turn ends.
+            BallTurnEnded();
 
             // Now that the ball has become stationary and grounded after its launch, end the player's turn, start the next.
             GameMaster.Instance.NextTurn();
@@ -171,6 +194,9 @@ public class BallMovement : MonoBehaviour
 
             // Tells the GameMaster slow time to the ball's set value.
             GameMaster.Instance.SetTimeRate(_aimingTimeRate);
+
+            // Calls every function that wants to do something when this ball begins aiming.
+            BallBeganAiming();
         }
     }
     
@@ -184,12 +210,6 @@ public class BallMovement : MonoBehaviour
         {
             // Sets this value to indicate that we are no longer aiming. Disables aiming indicator updates
             _aimingLaunch = false;
-
-            // Hides the aiming indicator.
-            _aimingIndicator.UpdateIndicator(false);
-
-            // If we don't ignore friction for a number of FixedUpdates, it will greatly oppose the launch force. Disabled next FixedUpdate call.
-            _ballFriction.IgnoreFriction(3);
 
             // Resets Chronoshot when a new shot begins.
             GameMaster.Instance.ResetChronoShot();
@@ -207,6 +227,13 @@ public class BallMovement : MonoBehaviour
 
             // Increments the ball's launch count.
             LaunchCount++;
+
+            // Calls every function that wants to do something when this ball stops aiming because it got launched.
+            BallStoppedAiming(true);
+        } else if (_aimingLaunch)
+        {
+            // Calls every function that wants to do something when this ball stops aiming but didn't get launched.
+            BallStoppedAiming(false);
         }
     }
 
@@ -269,7 +296,7 @@ public class BallMovement : MonoBehaviour
     /// <returns>The calculated launch strength</returns>
     public float CalculateLaunchStrength(float dragDistance)
     {
-        return Math.Clamp(dragDistance, 0, 5) * _forceMultiplier;
+        return Mathf.Clamp(dragDistance, 0, 5) * _forceMultiplier;
     }
 
     /// <summary>
