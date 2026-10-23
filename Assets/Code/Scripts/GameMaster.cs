@@ -154,16 +154,17 @@ public class GameMaster : MonoBehaviour
     }
 
     /// <summary>
-    /// Calculates a ball's resulting score based on the number of shots made and the current hole's score modifiers.
+    /// Calculates a ball's resulting score based on the number of shots made, the
+    /// time spent and the current hole's score modifiers.
     /// </summary>
-    /// <remarks>
-    /// Needs to account for real time taken as well.
-    /// </remarks>
     /// <param name="shotCount">The number of shots made before reaching the goal.</param>
     /// <returns>The score calculated given the number of shots and the current hole's values.</returns>
-    float CalculateScore(int shotCount)
+    float CalculateScore(int shotCount, float timeSpent)
     {
-        return (float)(_currentHole.BaseScore * Mathf.Pow(_currentHole.ShotCountScoreFactor, shotCount));
+        return (float)(_currentHole.BaseScore *
+            Mathf.Pow(_currentHole.ShotCountScoreFactor, shotCount) *
+            Mathf.Pow(_currentHole.TimeSpentScoreFactor, timeSpent));
+
     }
 
     /// <summary>
@@ -197,6 +198,7 @@ public class GameMaster : MonoBehaviour
             // Disables the movement component of every ball that isn't the first on the list.
             BallMovement playerBallMovement = playerBall.GetComponent<BallMovement>();
             playerBallMovement.enabled = playerBallState.BallID == 0;
+            playerBallMovement.BallTurnBegan?.Invoke();
 
             // Adds the new ball to the _balls list.
             _balls.Add(playerBall);
@@ -281,11 +283,17 @@ public class GameMaster : MonoBehaviour
     {
         // Gets the ball's movement component for the launch count and state component for its ID.
         BallMovement ballThatEnteredHoleMovementComponent = ballThatEnteredHole.GetComponent<BallMovement>();
+        BallTimeManager ballThatEnteredHoleTimeManagerComponent = ballThatEnteredHole.GetComponent<BallTimeManager>();
         BallState ballThatEnteredHoleStateComponent = ballThatEnteredHole.GetComponent<BallState>();
 
         // Calculates the player's new score and assigns it to the appropriate player.
-        _players[ballThatEnteredHoleStateComponent.BallID].Score += CalculateScore(ballThatEnteredHoleMovementComponent.LaunchCount);
-        Debug.LogFormat("Score: {0}", _players[ballThatEnteredHoleStateComponent.BallID].Score);
+        int ballID = ballThatEnteredHoleStateComponent.BallID;
+        int launchCount = ballThatEnteredHoleMovementComponent.LaunchCount;
+        float timeSpent = ballThatEnteredHoleTimeManagerComponent.TimeSpentInPlay;
+        _players[ballID].Score += CalculateScore(launchCount, timeSpent);
+
+        // To be replaced with UI visuals when we get there.
+        Debug.LogFormat("Player: {0}, Launches: {1}, Time Spent: {2}, Score: {3}", ballID, launchCount, timeSpent, _players[ballID].Score);
 
         // Deactivates the ball now that it has reached the goal.
         ballThatEnteredHole.SetActive(false);

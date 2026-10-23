@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 1050763229109611107}
   - component: {fileID: 264271947026590042}
   - component: {fileID: 6725211385542879696}
+  - component: {fileID: 7159895773572692828}
   m_Layer: 6
   m_Name: Ball
   m_TagString: Ball
@@ -208,6 +209,18 @@ MonoBehaviour:
   FrictionCheckLayers:
     serializedVersion: 2
     m_Bits: 8
+--- !u!114 &7159895773572692828
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1446885788393809777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 832dfdf719a13234dbfce1574f72c562, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChronoShot::BallTimeManager
 --- !u!1 &8645518760804587130
 GameObject:
   m_ObjectHideFlags: 0

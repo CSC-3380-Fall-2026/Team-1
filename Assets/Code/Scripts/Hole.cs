@@ -15,4 +15,7 @@ public class Hole : ScriptableObject
 
     // The factor by which the base score is decreased per shot.
     public float ShotCountScoreFactor = 0.9f;
+
+    // The factor by which the base score is decreased per second.
+    public float TimeSpentScoreFactor = 0.99f;
 }
