@@ -1,4 +1,3 @@
-using UnityEditor.EditorTools;
 using UnityEngine;
 
 /// <summary>
@@ -28,7 +27,7 @@ public class BallTimeManager : MonoBehaviour
     /// <summary>
     /// Sets the time rate modifier to the aiming amount.
     /// </summary>
-    void SetTimeRateToAimingSpeed()
+    void SetTimeRateModifierToAimingSpeed()
     {
         SetTimeRateModifier(_aimingTimeRateModifier);
     }
@@ -58,6 +57,30 @@ public class BallTimeManager : MonoBehaviour
     void SetTimeRateModifier(float newTimeRateModifier = -1.0f)
     {
         _timeRateModifier = (newTimeRateModifier == -1.0f) ? _regularTimeRateModifier : newTimeRateModifier;
+    }
+
+    /// <summary>
+    /// Callback function for the event called with the ball stops aiming.
+    /// Resets the time rate modifier to the default value.
+    /// </summary>
+    /// <param name="successfullyLaunched">Indicates whether or not the ball stopped being aimed because it was launched.</param>
+    void OnBallStoppedAiming(bool successfullyLaunched)
+    {
+        SetTimeRateModifier();
+    }
+
+    /// <summary>
+    /// Called when the component is first added.
+    /// Assigns the relevant callback functions to the relevant events on the BallMovement component.
+    /// </summary>
+    void Awake()
+    {
+        // Subscribes the relevant functions in this component to the ball's events.
+        BallMovement ballMovementComponent = GetComponent<BallMovement>();
+        ballMovementComponent.BallTurnBegan += StartMeasuringTime;
+        ballMovementComponent.BallTurnEnded += StopMeasuringTime;
+        ballMovementComponent.BallBeganAiming += SetTimeRateModifierToAimingSpeed;
+        ballMovementComponent.BallStoppedAiming += OnBallStoppedAiming;
     }
 
     /// <summary>
