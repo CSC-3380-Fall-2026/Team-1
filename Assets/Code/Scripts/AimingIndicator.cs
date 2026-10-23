@@ -59,7 +59,7 @@ public class AimingIndicator : MonoBehaviour
         _spriteRenderer.enabled = false;
 
         // Gets the ball movement component and subscribes to its aiming events to handle indicator updates.
-        BallMovement ballMovement = GetComponent<BallMovement>();
+        BallMovement ballMovement = transform.parent.GetComponent<BallMovement>();
         ballMovement.BallCurrentlyAiming += OnBallCurrentlyAiming;
         ballMovement.BallStoppedAiming += OnBallStoppedAiming;
     }

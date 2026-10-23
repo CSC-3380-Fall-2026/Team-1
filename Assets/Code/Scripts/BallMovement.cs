@@ -64,9 +64,6 @@ public class BallMovement : MonoBehaviour
     // A reference to the compenent that handles applying friction to the ball
     BallFriction _ballFriction;
 
-    // A reference to the ball's child object's component, that handles drawing the aiming indicator.
-    AimingIndicator _aimingIndicator;
-
     // A reference to the "launch" action set in the "Input Actions" settings window.
     InputAction _clickTouchAction;
 
@@ -107,7 +104,6 @@ public class BallMovement : MonoBehaviour
         // Initializes component references.
         _ballRigidBody = GetComponent<Rigidbody2D>();
         _ballFriction = GetComponent<BallFriction>();
-        _aimingIndicator = GetComponentInChildren<AimingIndicator>();
 
         // Sets reference to the Input Action assigned to a mouse click or one finger touch.
         _clickTouchAction = InputSystem.actions.FindAction("ClickTouch");
@@ -140,7 +136,7 @@ public class BallMovement : MonoBehaviour
             );
 
             // Calls any function that wants to do something every frame the ball is being aimed.
-            BallCurrentlyAiming(_indicatorPosition, _launchStrength);
+            BallCurrentlyAiming?.Invoke(_indicatorPosition, _launchStrength);
         } else if (_aimingLaunch && !CanLaunch())
         {
             // Assume that if the ability to launch is lost, the ball should no longer be aimed.
@@ -151,7 +147,7 @@ public class BallMovement : MonoBehaviour
             GameMaster.Instance.SetTimeRate();
 
             // Calls any function that wants to do something when the ball stops being aimed.
-            BallStoppedAiming(false);
+            BallStoppedAiming?.Invoke(false);
         }
 
         // Sets the ball's motion state to moving if its velocity is greater than our set threshold, stationary otherwise.
@@ -172,7 +168,7 @@ public class BallMovement : MonoBehaviour
             _hasLaunched = false;
 
             // Calls every function that wants to do something when the ball's turn ends.
-            BallTurnEnded();
+            BallTurnEnded?.Invoke();
 
             // Now that the ball has become stationary and grounded after its launch, end the player's turn, start the next.
             GameMaster.Instance.NextTurn();
@@ -196,7 +192,7 @@ public class BallMovement : MonoBehaviour
             GameMaster.Instance.SetTimeRate(_aimingTimeRate);
 
             // Calls every function that wants to do something when this ball begins aiming.
-            BallBeganAiming();
+            BallBeganAiming?.Invoke();
         }
     }
     
@@ -229,11 +225,11 @@ public class BallMovement : MonoBehaviour
             LaunchCount++;
 
             // Calls every function that wants to do something when this ball stops aiming because it got launched.
-            BallStoppedAiming(true);
+            BallStoppedAiming?.Invoke(true);
         } else if (_aimingLaunch)
         {
             // Calls every function that wants to do something when this ball stops aiming but didn't get launched.
-            BallStoppedAiming(false);
+            BallStoppedAiming?.Invoke(false);
         }
     }
 
