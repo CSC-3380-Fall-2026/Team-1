@@ -238,12 +238,12 @@ public class GameMaster : MonoBehaviour
             LoadNextHole();
             return;
         }
-            
-
 
         // Enables the ball movement component of the ball controlled by the player whose turn is beginning.
+        // Calls the event indicating the ball began its turn, so any related (subscribed)functions can be called.
         BallMovement nextPlayerBallMovementComponent = _balls[_currentPlayerTurn].GetComponent<BallMovement>();
         nextPlayerBallMovementComponent.enabled = true;
+        nextPlayerBallMovementComponent.BallTurnBegan?.Invoke();
     }
 
     /// <summary>

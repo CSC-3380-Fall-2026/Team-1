@@ -19,6 +19,10 @@ public class BallFriction : MonoBehaviour
     // The number of physics updates during which friction should be ignored
     int _ignoreFriction = 0;
 
+    // Determines the number of physics updates on which friction will be ignored to prevent opposition to launch force.
+    [SerializeField, Tooltip("The number of physics updates during which friction is ignored.\nNeeded, as friction will oppose launch force otherwise.")]
+    int _framesToIgnoreFrictionOnLaunch = 3;
+
     /// <summary>
     /// This is called when the object is instantiaed, before Start() and Update()
     /// It will also store the ball's Rigidbody2D component so it can be used when calculating
@@ -27,6 +31,11 @@ public class BallFriction : MonoBehaviour
     void Awake()
     {
         _ballRigidBody = GetComponent<Rigidbody2D>();
+
+        // Subscribes to the event called when the ball stops being aimed to ignore friction
+        // for the required frames to stop it from opposing launch force.
+        BallMovement ballMovement = GetComponent<BallMovement>();
+        ballMovement.BallStoppedAiming += OnBallStoppedAiming;
     }
 
     /// <summary>
@@ -96,5 +105,17 @@ public class BallFriction : MonoBehaviour
     public bool IsIgnoringFriction()
     {
         return _ignoreFriction > 0;
+    }
+
+    /// <summary>
+    /// This function is subscribed to the event that occurs when the ball stops being aimed.
+    /// It ignores friction for the default number of physics updates when the ball is launched to prevent friction
+    /// from opposing motion.
+    /// </summary>
+    /// <param name="successfullyLaunched">Reflects whether the ball stopped being aimed becaused it was launched or not.</param>
+    void OnBallStoppedAiming(bool successfullyLaunched)
+    {
+        if (successfullyLaunched)
+            IgnoreFriction(_framesToIgnoreFrictionOnLaunch);
     }
 }
