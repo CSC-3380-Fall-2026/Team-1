@@ -38,3 +38,12 @@ Amazon RDS for MySQL database hosting.
 * How do we not leak server credentials in the code? Environment variables?
 * Hoping that free $100/$200 from AWS credits let us use Amazon RDS to host the MySQL database for long enough.
 * Ground can be shaped with spline component or something like that. EdgeCollider component allows its collision to account for any shape.
+
+## 10/19/2026 
+* Role Changes: Elijah will now serve as the QA Tester, and I will take over the role of Project Manager.
+
+* Week 8 Task Review: Two tasks currently under “Waiting for Merge” for Week 8 do not have pull requests attached. We also noticed that several design tasks remain unclaimed or incomplete.
+
+* Beginner Map Priority: The designs for the Beginner Map need to be completed by the end of the week. Completing these designs is important before moving on to the Intermediate Map because the team needs a solid visual and structural foundation before implementing additional game features.
+
+* Team Roles and Bi-Weekly Reports: We reviewed the responsibilities associated with each team role and discussed the specific information that each role is responsible for including in the bi-weekly reports.

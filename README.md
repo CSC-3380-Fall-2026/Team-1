@@ -1,10 +1,10 @@
 # ChronoShot : Team 1
 # Members
-Project Manager: Eli (Efghd)\
+Project Manager: Seth (sethfields903)\
 Communications Lead: Daniel (dmelen3)\
 Git Master: Tega (isometrc)\
 Design Lead: [Name] ([GitHub Name])\
-Quality Assurance Tester: Seth (sethfields903)
+Quality Assurance Tester: ___ (___)
 
 # About Our Software
 
