@@ -35,6 +35,14 @@ public class BallMovement : MonoBehaviour
     public delegate void BallBeganAimingEvent();
     public BallBeganAimingEvent BallBeganAiming;
 
+    // Functions subscribed to this event will be called when the ball's motion state changes
+    public delegate void BallMotionStateChangedEvent(GameObject thisBallObject, MotionState newMotionState);
+    public BallMotionStateChangedEvent BallMotionStateChanged;
+
+    // Functions subscribed to this event will be called when the ball's grounded state changes
+    public delegate void BallGroundedStateChangedEvent(GameObject thisBallObject, GroundState newGroundState);
+    public BallGroundedStateChangedEvent BallGroundedStateChanged;
+
     // Functions subscribed to this event will be called every frame the ball is currently being aimed.
     public delegate void BallCurrentlyAimingEvent(Vector2 pointerWorldCoordinates = default(Vector2), float launchStrength = 0.0f);
     public BallCurrentlyAimingEvent BallCurrentlyAiming;
@@ -47,8 +55,14 @@ public class BallMovement : MonoBehaviour
     // Describes whether the ball is in contact with an object on the "Ground" layer or not.
     public GroundState CurrentGroundState;
 
+    // Used to determine whether the ball's ground state has changed.
+    GroundState _previousGroundState;
+
     // Describes information regarding the ball's motion.
     public MotionState CurrentMotionState;
+
+    // Used to determine whether the ball's motion state has changed.
+    MotionState _previousMotionState;
 
     // The number of times the ball has been launched. Reset every hole.
     [Tooltip("The number of times the ball has been launched."), Header ("Launching")]
@@ -150,9 +164,16 @@ public class BallMovement : MonoBehaviour
             BallStoppedAiming?.Invoke(false);
         }
 
+        // If these two are not equal after the state determination, changed this frame.
+        _previousMotionState = CurrentMotionState;
+
         // Sets the ball's motion state to moving if its velocity is greater than our set threshold, stationary otherwise.
         // If more movement states are added, will need more checks than just this binary one.
         CurrentMotionState = (_ballRigidBody.linearVelocity.magnitude > _movementThreshold) ? MotionState.Moving : MotionState.Stationary;
+
+        // Lets all subscribed functions know when the motion state has changed.
+        if (_previousMotionState != CurrentMotionState)
+            BallMotionStateChanged?.Invoke(gameObject, CurrentMotionState);
 
         // Asserts that we have not launched the ball since it last became stationary and grounded.
         if (CurrentMotionState == MotionState.Stationary &&
@@ -244,8 +265,15 @@ public class BallMovement : MonoBehaviour
     /// <param name="collisionInfo">Holds details about the collision that just occured.</param>
     void OnCollisionEnter2D(Collision2D collisionInfo)
     {
+        // If these two are not equal after the state determination, changed this call.
+        _previousGroundState = CurrentGroundState;
+
         // Changes the ball's ground state to grounded if the object it collided with was on the ground layer.
         CurrentGroundState = (collisionInfo.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) ? GroundState.Grounded : CurrentGroundState;
+
+        // Lets all subscribed functions know when the ground state has changed.
+        if ((_previousGroundState != CurrentGroundState) && !_ballFriction.IsIgnoringFriction())
+            BallGroundedStateChanged?.Invoke(gameObject, CurrentGroundState);
 
         // Confirms that the ball is no longer allowed to be launched, as it hit the ground after having being launched.
         // This check does not occur for until the same number of physics updates have passed that are needed to
@@ -282,7 +310,15 @@ public class BallMovement : MonoBehaviour
     /// <param name="collisionInfo">Holds details about the collision that the ball just exited.</param>
     void OnCollisionExit2D(Collision2D collisionInfo)
     {
+        // If these two are not equal after the state determination, changed this call.
+        _previousGroundState = CurrentGroundState;
+
+        // Changes the ball's ground state to airborne if it is no longer touching anything on the ground layer.
         CurrentGroundState = (!_ballRigidBody.IsTouchingLayers(LayerMask.GetMask("Ground"))) ? GroundState.Airborne : CurrentGroundState;
+
+        // Lets all subscribed functions know when the ground state has changed.
+        if ((_previousGroundState != CurrentGroundState) && !_ballFriction.IsIgnoringFriction())
+            BallGroundedStateChanged?.Invoke(gameObject, CurrentGroundState);
     }
 
     /// <summary>
