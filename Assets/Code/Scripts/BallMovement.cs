@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using UnityEditor.EditorTools;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -26,15 +23,46 @@ public class BallMovement : MonoBehaviour
         Moving
     }
 
+    // Functions subscribed to this event will be called when the ball's turn begins.
+    public delegate void BallTurnBeganEvent();
+    public BallTurnBeganEvent BallTurnBegan;
+
+    // Functions subscribed to this event will be called when the ball's turn ends.
+    public delegate void BallTurnEndedEvent();
+    public BallTurnEndedEvent BallTurnEnded;
+
+    // Functions subscribed to this event will be called when the ball starts being aimed.
+    public delegate void BallBeganAimingEvent();
+    public BallBeganAimingEvent BallBeganAiming;
+
+    // Functions subscribed to this event will be called when the ball's motion state changes
+    public delegate void BallMotionStateChangedEvent(GameObject thisBallObject, MotionState newMotionState);
+    public BallMotionStateChangedEvent BallMotionStateChanged;
+
+    // Functions subscribed to this event will be called when the ball's grounded state changes
+    public delegate void BallGroundedStateChangedEvent(GameObject thisBallObject, GroundState newGroundState);
+    public BallGroundedStateChangedEvent BallGroundedStateChanged;
+
+    // Functions subscribed to this event will be called every frame the ball is currently being aimed.
+    public delegate void BallCurrentlyAimingEvent(Vector2 pointerWorldCoordinates = default(Vector2), float launchStrength = 0.0f);
+    public BallCurrentlyAimingEvent BallCurrentlyAiming;
+
+    // Functions subscribed to this event will be called when the ball stops being aimed.
+    // The argument indicates whether the ball was launched when the aiming stopped or not.
+    public delegate void BallStoppedAimingEvent(bool successfullyLaunched = false);
+    public BallStoppedAimingEvent BallStoppedAiming;
+
     // Describes whether the ball is in contact with an object on the "Ground" layer or not.
     public GroundState CurrentGroundState;
+
+    // Used to determine whether the ball's ground state has changed.
+    GroundState _previousGroundState;
 
     // Describes information regarding the ball's motion.
     public MotionState CurrentMotionState;
 
-    // Only objects in these layers will apply friction to the ball.
-    [Tooltip("Only objects in these layers will apply friction to the ball."), Header("Friction")]
-    public LayerMask FrictionCheckLayers;
+    // Used to determine whether the ball's motion state has changed.
+    MotionState _previousMotionState;
 
     // The number of times the ball has been launched. Reset every hole.
     [Tooltip("The number of times the ball has been launched."), Header ("Launching")]
@@ -47,8 +75,8 @@ public class BallMovement : MonoBehaviour
     // The ball's rigidbody component handles its physics interactions.
     Rigidbody2D _ballRigidBody;
 
-    // A reference to the ball's child object's component, that handles drawing the aiming indicator.
-    AimingIndicator _aimingIndicator;
+    // A reference to the compenent that handles applying friction to the ball
+    BallFriction _ballFriction;
 
     // A reference to the "launch" action set in the "Input Actions" settings window.
     InputAction _clickTouchAction;
@@ -78,10 +106,6 @@ public class BallMovement : MonoBehaviour
     // The ball will only deny relaunching after ground contact if this value is true.
     bool _hasLaunched = false;
 
-    // Ignores friction if greater than 0. Used to prevent friction from cancelling launches for a chosen number of physics updates.
-    // Works generally to delay checking ground contact for a given duration to allow movement to be applied beforehand.
-    int _ignoreFriction = 0;
-
     [SerializeField, Tooltip("The rate of passage of time when aiming the ball.\n1.0 = regular\n0.0 = frozen")]
     float _aimingTimeRate = 0.2f;
 
@@ -93,7 +117,7 @@ public class BallMovement : MonoBehaviour
     {
         // Initializes component references.
         _ballRigidBody = GetComponent<Rigidbody2D>();
-        _aimingIndicator = GetComponentInChildren<AimingIndicator>();
+        _ballFriction = GetComponent<BallFriction>();
 
         // Sets reference to the Input Action assigned to a mouse click or one finger touch.
         _clickTouchAction = InputSystem.actions.FindAction("ClickTouch");
@@ -125,29 +149,37 @@ public class BallMovement : MonoBehaviour
                 Vector2.Distance(transform.position, _indicatorPosition)
             );
 
-            _aimingIndicator.UpdateIndicator(true, _indicatorPosition, _launchStrength);
+            // Calls any function that wants to do something every frame the ball is being aimed.
+            BallCurrentlyAiming?.Invoke(_indicatorPosition, _launchStrength);
         } else if (_aimingLaunch && !CanLaunch())
         {
             // Assume that if the ability to launch is lost, the ball should no longer be aimed.
             _aimingLaunch = false;
 
-            // Disables the indicator if the player is currently aiming, but loses the ability to launch.
-            _aimingIndicator.UpdateIndicator(false);
-
             // Restores the rate of passage of time to the default value.
             // Maybe move time-rate adjustment to UpdateIndicator function to simplify.
             GameMaster.Instance.SetTimeRate();
+
+            // Calls any function that wants to do something when the ball stops being aimed.
+            BallStoppedAiming?.Invoke(false);
         }
+
+        // If these two are not equal after the state determination, changed this frame.
+        _previousMotionState = CurrentMotionState;
 
         // Sets the ball's motion state to moving if its velocity is greater than our set threshold, stationary otherwise.
         // If more movement states are added, will need more checks than just this binary one.
         CurrentMotionState = (_ballRigidBody.linearVelocity.magnitude > _movementThreshold) ? MotionState.Moving : MotionState.Stationary;
 
+        // Lets all subscribed functions know when the motion state has changed.
+        if (_previousMotionState != CurrentMotionState)
+            BallMotionStateChanged?.Invoke(gameObject, CurrentMotionState);
+
         // Asserts that we have not launched the ball since it last became stationary and grounded.
         if (CurrentMotionState == MotionState.Stationary &&
             CurrentGroundState == GroundState.Grounded &&
             _hasLaunched &&
-            _ignoreFriction <= 0)
+            !_ballFriction.IsIgnoringFriction())
         {
             // The ball is allowed to be launched if this value is false.
             _hasHitGroundDuringCurrentLaunch = false;
@@ -155,56 +187,12 @@ public class BallMovement : MonoBehaviour
             // _hasHitGroundDuringCurrentLaunch is only set to true on ground collision if this value is true as well.
             // Done this way to prevent redundant operations and premature setting of _hasHitGroundDuringCurrentLaunch.
             _hasLaunched = false;
-        }
-    }
 
-    /// <summary>
-    /// Called every time the physics engine updates.
-    /// Used to apply the friction of every object in contact if they in one of the appropriate layers.
-    /// </summary>
-    void FixedUpdate()
-    {
-        // In case we decide we don't want friction applied this physics engine update.
-        if (_ignoreFriction > 0)
-        {
-            _ignoreFriction--;
-            return;
-        }
+            // Calls every function that wants to do something when the ball's turn ends.
+            BallTurnEnded?.Invoke();
 
-        // This object configures the request for all objects in contact. Currently filters for those in our chosen layers.
-        ContactFilter2D ballCollisionFilter = new ContactFilter2D();
-        ballCollisionFilter.useLayerMask = true;
-        ballCollisionFilter.layerMask = FrictionCheckLayers;
-
-        // Stores information about the contact points of all collisions that pass the filter in the list.
-        List<ContactPoint2D> ballCollisionContacts = new List<ContactPoint2D>();
-        _ballRigidBody.GetContacts(ballCollisionFilter, ballCollisionContacts);
-
-        foreach(ContactPoint2D contactPoint in ballCollisionContacts)
-        {
-            // The force applied to the ball at the point of contact. Remains at zero if the ball is stationary.
-            Vector2 frictionForce = Vector2.zero;
-
-            // Stores the velocity of the point on the rigidbody where the collision occured. Accounts for linear and angular velocity.
-            Vector2 contactPointVelocity = _ballRigidBody.GetPointVelocity(contactPoint.point);
-
-            // Avoids needless computation, as no friction needed if the ball is stationary.
-            if (contactPointVelocity.magnitude > 0)
-            {
-                // Friction opposes motion, so its direction should be opposite that of the velocity of the rigidbody at the point of contact.
-                Vector2 frictionForceDirection = -contactPointVelocity.normalized;
-
-                // The magnitude of the vector projection of the net forces acting on the ball onto the normal vector.
-                // The rigidbody's totalForce attribute only accounts for those created with AddForce and its family of functions, not gravity.
-                float normalForceMagnitude = ((_ballRigidBody.totalForce + Physics2D.gravity) * contactPoint.normal).magnitude;
-
-                // Calculates the dynamic friction in the direction opposing motion.
-                // The colliding object's friction value is the coefficient of dynamic friction.
-                frictionForce = contactPoint.collider.friction * normalForceMagnitude * frictionForceDirection;
-            }
-            
-            // Applies the friction force on the ball's rigidbody at the point of contact.
-            _ballRigidBody.AddForceAtPosition(frictionForce, contactPoint.point);
+            // Now that the ball has become stationary and grounded after its launch, end the player's turn, start the next.
+            GameMaster.Instance.NextTurn();
         }
     }
 
@@ -223,6 +211,9 @@ public class BallMovement : MonoBehaviour
 
             // Tells the GameMaster slow time to the ball's set value.
             GameMaster.Instance.SetTimeRate(_aimingTimeRate);
+
+            // Calls every function that wants to do something when this ball begins aiming.
+            BallBeganAiming?.Invoke();
         }
     }
     
@@ -236,12 +227,6 @@ public class BallMovement : MonoBehaviour
         {
             // Sets this value to indicate that we are no longer aiming. Disables aiming indicator updates
             _aimingLaunch = false;
-
-            // Hides the aiming indicator.
-            _aimingIndicator.UpdateIndicator(false);
-
-            // If we don't ignore friction for a number of FixedUpdates, it will greatly oppose the launch force. Disabled next FixedUpdate call.
-            _ignoreFriction += 3;
 
             // Resets Chronoshot when a new shot begins.
             GameMaster.Instance.ResetChronoShot();
@@ -259,6 +244,13 @@ public class BallMovement : MonoBehaviour
 
             // Increments the ball's launch count.
             LaunchCount++;
+
+            // Calls every function that wants to do something when this ball stops aiming because it got launched.
+            BallStoppedAiming?.Invoke(true);
+        } else if (_aimingLaunch)
+        {
+            // Calls every function that wants to do something when this ball stops aiming but didn't get launched.
+            BallStoppedAiming?.Invoke(false);
         }
     }
 
@@ -273,13 +265,20 @@ public class BallMovement : MonoBehaviour
     /// <param name="collisionInfo">Holds details about the collision that just occured.</param>
     void OnCollisionEnter2D(Collision2D collisionInfo)
     {
+        // If these two are not equal after the state determination, changed this call.
+        _previousGroundState = CurrentGroundState;
+
         // Changes the ball's ground state to grounded if the object it collided with was on the ground layer.
         CurrentGroundState = (collisionInfo.collider.gameObject.layer == LayerMask.NameToLayer("Ground")) ? GroundState.Grounded : CurrentGroundState;
+
+        // Lets all subscribed functions know when the ground state has changed.
+        if ((_previousGroundState != CurrentGroundState) && !_ballFriction.IsIgnoringFriction())
+            BallGroundedStateChanged?.Invoke(gameObject, CurrentGroundState);
 
         // Confirms that the ball is no longer allowed to be launched, as it hit the ground after having being launched.
         // This check does not occur for until the same number of physics updates have passed that are needed to
         // be sure the ball has had enough time to leave the ground post launch.
-        if (_ignoreFriction == 0)
+        if (!_ballFriction.IsIgnoringFriction())
             _hasHitGroundDuringCurrentLaunch = _hasLaunched;
     }
 
@@ -298,7 +297,7 @@ public class BallMovement : MonoBehaviour
         if (collisionInfo.collider.gameObject.layer == LayerMask.NameToLayer("Ground"))
         {
             // Asserts that the ball has hit the ground during this launch if the chosen number of physics updates have passed to be sure movement has been applied.
-            if (_ignoreFriction == 0)
+            if (!_ballFriction.IsIgnoringFriction())
                 _hasHitGroundDuringCurrentLaunch = _hasLaunched;
         }
     }
@@ -311,7 +310,15 @@ public class BallMovement : MonoBehaviour
     /// <param name="collisionInfo">Holds details about the collision that the ball just exited.</param>
     void OnCollisionExit2D(Collision2D collisionInfo)
     {
+        // If these two are not equal after the state determination, changed this call.
+        _previousGroundState = CurrentGroundState;
+
+        // Changes the ball's ground state to airborne if it is no longer touching anything on the ground layer.
         CurrentGroundState = (!_ballRigidBody.IsTouchingLayers(LayerMask.GetMask("Ground"))) ? GroundState.Airborne : CurrentGroundState;
+
+        // Lets all subscribed functions know when the ground state has changed.
+        if ((_previousGroundState != CurrentGroundState) && !_ballFriction.IsIgnoringFriction())
+            BallGroundedStateChanged?.Invoke(gameObject, CurrentGroundState);
     }
 
     /// <summary>
@@ -321,7 +328,7 @@ public class BallMovement : MonoBehaviour
     /// <returns>The calculated launch strength</returns>
     public float CalculateLaunchStrength(float dragDistance)
     {
-        return Math.Clamp(dragDistance, 0, 5) * _forceMultiplier;
+        return Mathf.Clamp(dragDistance, 0, 5) * _forceMultiplier;
     }
 
     /// <summary>

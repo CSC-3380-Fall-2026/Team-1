@@ -14,6 +14,8 @@ GameObject:
   - component: {fileID: 5230685127457652330}
   - component: {fileID: 1050763229109611107}
   - component: {fileID: 264271947026590042}
+  - component: {fileID: 6725211385542879696}
+  - component: {fileID: 7159895773572692828}
   m_Layer: 6
   m_Name: Ball
   m_TagString: Ball
@@ -30,7 +32,7 @@ Transform:
   m_GameObject: {fileID: 1446885788393809777}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -171,7 +173,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0605eb68e3ed2148957f6e2824e22d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  ballID: 0
+  BallID: 0
+  PlayerName: 
 --- !u!114 &264271947026590042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -186,14 +189,41 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   CurrentGroundState: 0
   CurrentMotionState: 0
-  FrictionCheckLayers:
-    serializedVersion: 2
-    m_Bits: 8
   LaunchCount: 0
   _movementThreshold: 0.2
   _ballInteractionRadius: 1
   _forceMultiplier: 100
   _aimingTimeRate: 0.2
+--- !u!114 &6725211385542879696
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1446885788393809777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 426b6c860d5f64bb3a171c82819a718b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChronoShot::BallFriction
+  FrictionCheckLayers:
+    serializedVersion: 2
+    m_Bits: 8
+  _framesToIgnoreFrictionOnLaunch: 3
+--- !u!114 &7159895773572692828
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1446885788393809777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 832dfdf719a13234dbfce1574f72c562, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChronoShot::BallTimeManager
+  _regularTimeRateModifier: 1
+  _aimingTimeRateModifier: 1
 --- !u!1 &8645518760804587130
 GameObject:
   m_ObjectHideFlags: 0

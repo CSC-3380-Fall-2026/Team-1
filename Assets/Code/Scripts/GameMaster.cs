@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// A general controller of game state.
@@ -15,13 +16,22 @@ public class GameMaster : MonoBehaviour
         private set;
     }
 
-    // For testing purposes, the current hole being played.
+    // For testing purposes, the current course being played.
     [SerializeField]
-    Hole _currentHole;
+    Course _currentCourse;
+
+    // The index of the hole currently being played on the current course's hole list.
+    int _currentHoleID = 0;
+
+    // The hole referenced by the current hole ID.
+    Hole _currentHole {get => _currentCourse.Holes[_currentHoleID];}
 
     // The players in the current game.
     [SerializeField, Tooltip("A list of the players in the current game.")]
     List<Player> _players;
+
+    // The index of the player whose turn it is to perform actions in the players list.
+    int _currentPlayerTurn = 0;
 
     // The balls in the current map. Ball index should match player index.
     List<GameObject> _balls = new List<GameObject>();
@@ -41,6 +51,9 @@ public class GameMaster : MonoBehaviour
     [SerializeField, Tooltip("The normal rate of passage of time.\n1.0 = regular\n0.0 = frozen"), Header("Time")]
     float _normalTimeRate = 1.0f;
 
+    // This stores the normal physics timestep so the physics updates remain consistent during time dilation
+    float _normalFixedDeltaTime;
+
     /// <summary>
     /// Resets a given ball to a chosen location, possibly also resetting status effects.
     /// </summary>
@@ -50,7 +63,8 @@ public class GameMaster : MonoBehaviour
     /// <param name="ballToBeReset">A reference to the ball we would like to reset.</param>
     /// <param name="resetLocationObjects">GameObjects whose locations are candidates for the reset.</param>
     /// <param name="removeStatusEffects">Whether or not we will remove any status effects currently affecting the ball.</param>
-    public void ResetBall(GameObject ballToBeReset, GameObject[] resetLocationObjects, bool removeStatusEffects = true)
+    /// <param name="startFromIndex">Only spawn points on or after this index on the list will be considered.</param>
+    public void ResetBall(GameObject ballToBeReset, GameObject[] resetLocationObjects, bool removeStatusEffects = true, int startFromIndex = 0)
     {
         // When we add a ball status component, reset its status effects.
         if (removeStatusEffects);
@@ -61,8 +75,11 @@ public class GameMaster : MonoBehaviour
         // Tracks whether or not any reset location is unoccupied so that the ball can be placed there.
         bool resetLocationClear = false;
 
+        // Makes a subarray of the reset location objects starting from the given index.
+        GameObject[] consideredResetLocationObjects = resetLocationObjects[startFromIndex..];
+
         // Checks if each reset location is unobstructed.
-        foreach (GameObject resetLocationObject in resetLocationObjects)
+        foreach (GameObject resetLocationObject in consideredResetLocationObjects)
         {
             // Needed to determine if the collider is touching anything on the layers we're checking.
             CircleCollider2D resetLocationObjectCollider = resetLocationObject.GetComponent<CircleCollider2D>();
@@ -126,50 +143,135 @@ public class GameMaster : MonoBehaviour
     /// </param>
     public void SetTimeRate(float newTimeRate = -1.0f)
     {
-        // If no value given (or -1.0f) set the rate to our set value (in case we decide on a different default).
+        // Uses the normal time rate when no specifc rate is provided
         if (newTimeRate == -1.0f)
-        {
-            Time.timeScale = _normalTimeRate;
-            return;
-        }
+            newTimeRate = _normalTimeRate;
 
         Time.timeScale = newTimeRate;
+
+        // This will adjust the physics timestep with the time scale to keep the physics updates smooth during time dilaton
+        Time.fixedDeltaTime = _normalFixedDeltaTime * newTimeRate;
     }
 
     /// <summary>
-    /// Calculates a ball's resulting score based on the number of shots made and the current hole's score modifiers.
+    /// Calculates a ball's resulting score based on the number of shots made, the
+    /// time spent and the current hole's score modifiers.
     /// </summary>
-    /// <remarks>
-    /// Needs to account for real time taken as well.
-    /// </remarks>
     /// <param name="shotCount">The number of shots made before reaching the goal.</param>
     /// <returns>The score calculated given the number of shots and the current hole's values.</returns>
-    float CalculateScore(int shotCount)
+    float CalculateScore(int shotCount, float timeSpent)
     {
-        return (float)(_currentHole.BaseScore * Mathf.Pow(_currentHole.ShotCountScoreFactor, shotCount));
+        return (float)(_currentHole.BaseScore *
+            Mathf.Pow(_currentHole.ShotCountScoreFactor, shotCount) *
+            Mathf.Pow(_currentHole.TimeSpentScoreFactor, timeSpent));
+
     }
 
     /// <summary>
     /// Goes through the list of players and spawns a ball for each one at the given spawn points.
     /// Uses the first unobstructed one found in the list.
     /// </summary>
+    /// <remarks>
+    /// Every ball after the first will have its movement component disabled: not its turn.
+    /// </remarks>
     void SpawnBalls()
     {
         // The following operations occur for each player in the _players list.
-        foreach (Player player in _players)
+        for (int i = 0; i < _players.Count; i++)
         {
-            // Creates a ball at the origin then moves it to an unobstructed spawnpoint by the reset function.
+            // To prevent constant re-referencing.
+            Player player = _players[i];
+
+            // Creates a ball at the origin.
             GameObject playerBall = Instantiate(_ballPrefab);
-            ResetBall(playerBall, SpawnPoints);
 
             // Configures the ball's initial state. Its ID should be its new position in the _balls list.
             BallState playerBallState = playerBall.GetComponent<BallState>();
             playerBallState.BallID = _balls.Count;
             playerBallState.PlayerName = player.PlayerName;
 
+            // Moves the new ball to an unobstructed spawnpoint by the reset function.
+            // Every ball will be spawned before the next physics update, so reset cannot check for obstruction.
+            // To get around this, spawnpoints obstructed by balls just spawned are manually ignored.
+            ResetBall(playerBall, SpawnPoints, true, i);
+
+            // Disables the movement component of every ball that isn't the first on the list.
+            BallMovement playerBallMovement = playerBall.GetComponent<BallMovement>();
+            playerBallMovement.enabled = playerBallState.BallID == 0;
+            playerBallMovement.BallTurnBegan?.Invoke();
+
             // Adds the new ball to the _balls list.
             _balls.Add(playerBall);
         }
+    }
+
+    /// <summary>
+    /// Handles ending the current player's turn and beginning the next.
+    /// Currently disables the movement of the ball ending its turn and enables that of the ball beginning its own.
+    /// Moves to next hole if all balls have entered the cup.
+    /// </summary>
+    public void NextTurn()
+    {
+        // Disables the ball movement component of the ball controlled by the player whose turn is ending.
+        BallMovement currentPlayerBallMovementComponent = _balls[_currentPlayerTurn].GetComponent<BallMovement>();
+        currentPlayerBallMovementComponent.enabled = false;
+
+        // Tracks whether any active ball was found in the balls list.
+        bool anyBallsActive = false;
+
+        // Loops through the balls list once to handle scenario where there is no active ball to switch turn to.
+        for (int i = 0; i < _balls.Count; i++)
+        {
+            // Makes the next player on the list the one whose turn it is. Loops to 0 if end reached.
+            _currentPlayerTurn = (_currentPlayerTurn + 1) % _players.Count;
+
+            // Exits the loop if any active ball is found.
+            if (_balls[_currentPlayerTurn].activeSelf)
+            {
+                anyBallsActive = true;
+                break;
+            }
+        }
+
+        // If no balls are active, then all should have entered the cup.
+        // Call function that handles moving to the next hole.
+        if (!anyBallsActive)
+        {
+            LoadNextHole();
+            return;
+        }
+
+        // Enables the ball movement component of the ball controlled by the player whose turn is beginning.
+        // Calls the event indicating the ball began its turn, so any related (subscribed)functions can be called.
+        BallMovement nextPlayerBallMovementComponent = _balls[_currentPlayerTurn].GetComponent<BallMovement>();
+        nextPlayerBallMovementComponent.enabled = true;
+        nextPlayerBallMovementComponent.BallTurnBegan?.Invoke();
+    }
+
+    /// <summary>
+    /// Advances to the next hole in the current cocurse and laods its scene
+    /// </summary>
+    void LoadNextHole()
+    {
+        // Stops progression if no course has been assigned
+        if (_currentCourse == null)
+        {
+            Debug.LogWarning("No course is assigned. Unable to load the next hole.");
+            return;
+        }
+
+        //Advances the current hole index
+        _currentHoleID++;
+
+        // Stops progression if the current hole was the final hole in the course
+        if (_currentHoleID >= _currentCourse.Holes.Length)
+        {
+            Debug.Log("All players have completed the course.");
+            return;
+        }
+
+        // Loads the scene associated with the next hole
+        SceneManager.LoadScene(_currentHole.Map.name);
     }
 
     /// <summary>
@@ -181,14 +283,24 @@ public class GameMaster : MonoBehaviour
     {
         // Gets the ball's movement component for the launch count and state component for its ID.
         BallMovement ballThatEnteredHoleMovementComponent = ballThatEnteredHole.GetComponent<BallMovement>();
+        BallTimeManager ballThatEnteredHoleTimeManagerComponent = ballThatEnteredHole.GetComponent<BallTimeManager>();
         BallState ballThatEnteredHoleStateComponent = ballThatEnteredHole.GetComponent<BallState>();
 
-        // Calculates the player's score and assigns it to the appropriate player.
-        _players[ballThatEnteredHoleStateComponent.BallID].Score = CalculateScore(ballThatEnteredHoleMovementComponent.LaunchCount);
-        Debug.LogFormat("Score: {0}", _players[ballThatEnteredHoleStateComponent.BallID].Score);
+        // Calculates the player's new score and assigns it to the appropriate player.
+        int ballID = ballThatEnteredHoleStateComponent.BallID;
+        int launchCount = ballThatEnteredHoleMovementComponent.LaunchCount;
+        float timeSpent = ballThatEnteredHoleTimeManagerComponent.TimeSpentInPlay;
+        _players[ballID].Score += CalculateScore(launchCount, timeSpent);
+
+        // To be replaced with UI visuals when we get there.
+        Debug.LogFormat("Player: {0}, Launches: {1}, Time Spent: {2}, Score: {3}", ballID, launchCount, timeSpent, _players[ballID].Score);
 
         // Deactivates the ball now that it has reached the goal.
         ballThatEnteredHole.SetActive(false);
+
+        // Changes turn to the next on the list if it was this ball's turn.
+        if (ballThatEnteredHoleStateComponent.BallID == _currentPlayerTurn)
+            NextTurn();
     }
 
     /// <summary>
@@ -197,6 +309,9 @@ public class GameMaster : MonoBehaviour
     /// </summary>
     void Awake()
     {
+        // This stores Unity's default physics timestep before any time dilation is applied
+        _normalFixedDeltaTime = Time.fixedDeltaTime;
+
         // Ensures that there will only be one instance of the GameMaster at any time.
         if (Instance != null && Instance != this)
             Destroy(this);
