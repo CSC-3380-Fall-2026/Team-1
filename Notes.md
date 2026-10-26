@@ -48,7 +48,7 @@ Amazon RDS for MySQL database hosting.
 
 * Team Roles and Bi-Weekly Reports: We reviewed the responsibilities associated with each team role and discussed the specific information that each role is responsible for including in the bi-weekly reports.
 
-* # Meeting 10/26/2026
+## 10/26/2026
 
 ## Weekly Standup Formatting
 
