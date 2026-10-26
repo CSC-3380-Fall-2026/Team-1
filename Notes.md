@@ -110,6 +110,7 @@ We also plan to allow players to zoom the camera in and out so they can see more
 If you have ideas for how the zoom feature should work or feel during gameplay, please share them with the team.
 
 **Wind Zone Feature:**
+
 As presented in our project, we also plan to implement wind zones throughout the game. Wind zones will affect the direction and movement of the golf ball while it is airborne.
 
 If you have any ideas for how the wind zones should work, look, or affect gameplay, please share them with the team. All ideas for this feature are appreciated.
