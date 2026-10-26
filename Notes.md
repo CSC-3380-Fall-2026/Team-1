@@ -47,3 +47,64 @@ Amazon RDS for MySQL database hosting.
 * Beginner Map Priority: The designs for the Beginner Map need to be completed by the end of the week. Completing these designs is important before moving on to the Intermediate Map because the team needs a solid visual and structural foundation before implementing additional game features.
 
 * Team Roles and Bi-Weekly Reports: We reviewed the responsibilities associated with each team role and discussed the specific information that each role is responsible for including in the bi-weekly reports.
+
+* # Meeting 10/26/2026
+
+## Weekly Standup Formatting
+
+**Formatting:**  
+Denny requires the Weekly Standup to follow the exact format and template provided. To avoid losing points, please do not change the font, remove underlines, or modify the required formatting. Make sure all information is organized and spaced evenly for readability.
+
+**Role Switching:**  
+Two team roles have officially changed. For the next Weekly Standup, please list:
+- **Seth – Project Manager**
+- **Elijah – QA Tester**
+
+**Pull Requests:**  
+A pull request is required for completed **Regular** tasks. If the correct pull request link is not attached to the task, the task will not count toward the required task points.
+
+Example of a **Pull Request link:**  
+https://github.com/CSC-3380-Fall-2026/Team-1/pull/38
+
+Example of an **Issue link, not a Pull Request:**  
+https://github.com/CSC-3380-Fall-2026/Team-1/issues/86
+
+---
+
+## Tasks
+
+**Pull Request Requirement:**  
+Any completed task that involves changes to the project's code must have its own pull request. The pull request allows the team to review what was implemented or changed and ensures everyone can update their local code accordingly.
+
+Tasks placed in **Waiting For Merge** without a pull request will be moved back to **In Progress** until a pull request is created and approved by the Git Master.
+
+**Task Conflicts:**  
+If you are unable to complete an assigned task for any reason, you may unassign yourself so another team member can take responsibility for completing it.
+
+---
+
+## Map Implementation
+
+**Beginner Map:**  
+Last week, we focused on implementing new features and fixing issues involving the golf ball and scoring system. This week, one of our main priorities is creating a playable **Beginner Map**.
+
+If you have an idea for the map layout, please share it in Discord. Images, sketches, or screenshots of possible layouts are encouraged.
+
+Creating the maps will also help us determine what additional features are needed and whether any existing features should be changed or removed to improve gameplay.
+
+**Map Designing:**  
+If you need help designing the map, including adding shapes, creating curved sprites, or working with other map elements, please reach out to **Tega**.
+
+---
+
+## Camera
+
+**Camera Movement:**  
+We plan to have the camera follow and focus on the golf ball as it moves throughout the map, including while the ball is airborne or rolling on the ground.
+
+If you have ideas for how the camera should follow the ball or behave during gameplay, please share them in Discord or discuss them with the team in person. All ideas are welcome.
+
+**Zoom In/Out:**  
+We also plan to allow players to zoom the camera in and out so they can see more or less of the map when needed.
+
+If you have ideas for how the zoom feature should work or feel during gameplay, please share them with the team.
