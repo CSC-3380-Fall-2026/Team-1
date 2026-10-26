@@ -95,7 +95,7 @@ Creating the maps will also help us determine what additional features are neede
 **Map Designing:**  
 If you need help designing the map, including adding shapes, creating curved sprites, or working with other map elements, please reach out to **Tega**.
 
-**Wind Zones** 
+**Wind Zones:** 
 As presented in the project, we also plan to implement wind zones into the game, which will affect the directon of the golf ball when it is hit or airborne. Any ideas about this feature is appreciated.
 
 ---
