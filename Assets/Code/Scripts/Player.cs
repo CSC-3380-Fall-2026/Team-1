@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 /// <summary>
@@ -11,7 +10,11 @@ using UnityEngine;
 public class Player : ScriptableObject
 {
     // The player's name.
-    public String PlayerName;
+    public string PlayerName;
+
+    public ulong PlayerClientID;
+
+    public string PlayerGUID;
 
     // The player's score on the current hole.
     public float Score;
@@ -23,8 +26,10 @@ public class Player : ScriptableObject
     /// Constructor. Only sets the name for now.
     /// </summary>
     /// <param name="playerName">The name of the new player.</param>
-    public Player(String playerName)
+    public Player(string playerName, ulong playerClientID, string playerGUID)
     {
         PlayerName = playerName;
+        PlayerClientID = playerClientID;
+        PlayerGUID = playerGUID;
     }
 }

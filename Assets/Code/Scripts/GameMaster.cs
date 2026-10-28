@@ -303,6 +303,22 @@ public class GameMaster : MonoBehaviour
             NextTurn();
     }
 
+    public void AddPlayer(string playerName, ulong playerClientID, string playerGUID)
+    {
+        foreach(Player player in _players)
+        {
+            if (player.PlayerGUID == playerGUID)
+            {
+                player.PlayerClientID = playerClientID;
+                Debug.Log("Player already exists. Updated client ID");
+
+                return;
+            }
+        }
+
+        _players.Add(new Player(playerName, playerClientID, playerGUID));
+    }
+
     /// <summary>
     /// This function is called when the game object is instantiated, before Start() or any Update functions.
     /// Sets this instance as the singleton if there isn't one already, destroys this instance if there is.
