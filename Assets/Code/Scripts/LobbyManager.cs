@@ -18,15 +18,25 @@ public class LobbyManager : MonoBehaviour
             Destroy(this);
         else
             Instance = this;
-
-        _unityTransport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-        _singleplayerTransport = NetworkManager.Singleton.GetComponent<SinglePlayerTransport>();
     }
 
-    void BeginHosting(bool singleplayer)
+    void Start()
     {
-        NetworkManager.Singleton.NetworkConfig.NetworkTransport = singleplayer ? _singleplayerTransport : _unityTransport;
+        _unityTransport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+        _singleplayerTransport = NetworkManager.Singleton.GetComponent<SinglePlayerTransport>();
+
+        BeginHosting(false, 12345);
+    }
+
+    void BeginHosting(bool localMultiplayer, ushort hostPort)
+    {
+        NetworkTransport chosenTransportLayer;
+        NetworkManager.Singleton.NetworkConfig.NetworkTransport = chosenTransportLayer = localMultiplayer ? _singleplayerTransport : _unityTransport;
+
+        if (!localMultiplayer) _unityTransport.SetConnectionData("127.0.0.1", hostPort, "0.0.0.0");
+
         NetworkManager.Singleton.NetworkConfig.NetworkTopology = NetworkTopologyTypes.ClientServer;
+
         NetworkManager.Singleton.ConnectionApprovalCallback = HandleConnectionApproval;
         NetworkManager.Singleton.OnServerStarted += ServerStartedHandler;
 
