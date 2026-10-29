@@ -65,8 +65,11 @@ public class BallFriction : MonoBehaviour
             // The force applied to the ball at the point of contact. Remains at zero if the ball is stationary.
             Vector2 frictionForce = Vector2.zero;
 
+            // Adjusts the contact point slightly toward the ball so friction use a point on the ball's rigidbody
+            Vector2 adjustContactPoint = Vector2.MoveTowards(contactPoint.point, _ballRigidBody.position, 0.01f);
+
             // Stores the velocity of the point on the rigidbody where the collision occured. Accounts for linear and angular velocity.
-            Vector2 contactPointVelocity = _ballRigidBody.GetPointVelocity(contactPoint.point);
+            Vector2 contactPointVelocity = _ballRigidBody.GetPointVelocity(adjustContactPoint);
 
             // Avoids needless computation, as no friction needed if the ball is stationary.
             if (contactPointVelocity.magnitude > 0)
@@ -81,10 +84,20 @@ public class BallFriction : MonoBehaviour
                 // Calculates the dynamic friction in the direction opposing motion.
                 // The colliding object's friction value is the coefficient of dynamic friction.
                 frictionForce = contactPoint.collider.friction * normalForceMagnitude * frictionForceDirection;
+
+                // This will prevent friction from applying more force than is needed to stop the ball
+                
+                float maxStoppingForce = (_ballRigidBody.mass * contactPointVelocity.magnitude) / Time.fixedDeltaTime * contactPoint.collider.friction;
+
+                if (frictionForce.magnitude > maxStoppingForce)
+                {
+                    frictionForce = maxStoppingForce * frictionForceDirection;
+                }
+                
             }
             
             // Applies the friction force on the ball's rigidbody at the point of contact.
-            _ballRigidBody.AddForceAtPosition(frictionForce, contactPoint.point);
+            _ballRigidBody.AddForceAtPosition(frictionForce, adjustContactPoint);
         }
     }
 
