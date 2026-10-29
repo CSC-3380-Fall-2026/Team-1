@@ -1,7 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
-using Unity.Netcode.Transports.SinglePlayer;
 using Unity.Multiplayer.PlayMode;
 
 public class LobbyManager : MonoBehaviour
@@ -9,6 +8,12 @@ public class LobbyManager : MonoBehaviour
     public static LobbyManager Instance {private set; get;}
 
     public int maxPlayers = 4;
+
+    [SerializeField]
+    bool _localMultiplayer = true;
+
+    [SerializeField]
+    ushort hostPort = 12345;
 
     UnityTransport _unityTransport;
 
@@ -25,16 +30,16 @@ public class LobbyManager : MonoBehaviour
         _unityTransport = NetworkManager.Singleton.GetComponent<UnityTransport>();
 
         if (CurrentPlayer.IsMainEditor)
-            BeginHosting(false, 12345);
+            BeginHosting(_localMultiplayer, hostPort);
         else
-            ConnectToHost("127.0.0.1", "12345");
+            ConnectToHost("127.0.0.1", hostPort.ToString());
     }
 
     void BeginHosting(bool localMultiplayer, ushort hostPort)
     {
         NetworkManager.Singleton.NetworkConfig.NetworkTransport = _unityTransport;
 
-        _unityTransport.SetConnectionData("127.0.0.1", hostPort, localMultiplayer ? null : "0.0.0.0");
+        _unityTransport.SetConnectionData("127.0.0.1", hostPort, _localMultiplayer ? null : "0.0.0.0");
 
         NetworkManager.Singleton.NetworkConfig.NetworkTopology = NetworkTopologyTypes.ClientServer;
 
