@@ -21,15 +21,4 @@ public class Player : ScriptableObject
 
     // Later, a reference to a ScriptableObject with cosmetic choices.
     // Maybe a reference to a settings object for player-specific settings.
-
-    /// <summary>
-    /// Constructor. Only sets the name for now.
-    /// </summary>
-    /// <param name="playerName">The name of the new player.</param>
-    public Player(string playerName, ulong playerClientID, string playerGUID)
-    {
-        PlayerName = playerName;
-        PlayerClientID = playerClientID;
-        PlayerGUID = playerGUID;
-    }
 }
