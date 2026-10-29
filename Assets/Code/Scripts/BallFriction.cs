@@ -85,22 +85,15 @@ public class BallFriction : MonoBehaviour
                 // The colliding object's friction value is the coefficient of dynamic friction.
                 frictionForce = contactPoint.collider.friction * normalForceMagnitude * frictionForceDirection;
 
-                // Stops very slow movement on high-friction surfaces
-
-                if (contactPoint.collider.friction > 1f && contactPointVelocity.magnitude < 0.00015f)
-                {
-                    _ballRigidBody.linearVelocity = Vector2.zero;
-                    _ballRigidBody.angularVelocity = 0f;
-                    return;
-                }
-
                 // This will prevent friction from applying more force than is needed to stop the ball
+                
                 float maxStoppingForce = (_ballRigidBody.mass * contactPointVelocity.magnitude) / Time.fixedDeltaTime * contactPoint.collider.friction;
 
                 if (frictionForce.magnitude > maxStoppingForce)
                 {
                     frictionForce = maxStoppingForce * frictionForceDirection;
                 }
+                
             }
             
             // Applies the friction force on the ball's rigidbody at the point of contact.
