@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using Unity.Netcode.Transports.SinglePlayer;
+using Unity.Multiplayer.PlayMode;
 
 public class LobbyManager : MonoBehaviour
 {
@@ -10,7 +11,6 @@ public class LobbyManager : MonoBehaviour
     public int maxPlayers = 4;
 
     UnityTransport _unityTransport;
-    SinglePlayerTransport _singleplayerTransport;
 
     void Awake()
     {
@@ -23,17 +23,18 @@ public class LobbyManager : MonoBehaviour
     void Start()
     {
         _unityTransport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-        _singleplayerTransport = NetworkManager.Singleton.GetComponent<SinglePlayerTransport>();
 
-        BeginHosting(false, 12345);
+        if (CurrentPlayer.IsMainEditor)
+            BeginHosting(false, 12345);
+        else
+            ConnectToHost("127.0.0.1", "12345");
     }
 
     void BeginHosting(bool localMultiplayer, ushort hostPort)
     {
-        NetworkTransport chosenTransportLayer;
-        NetworkManager.Singleton.NetworkConfig.NetworkTransport = chosenTransportLayer = localMultiplayer ? _singleplayerTransport : _unityTransport;
+        NetworkManager.Singleton.NetworkConfig.NetworkTransport = _unityTransport;
 
-        if (!localMultiplayer) _unityTransport.SetConnectionData("127.0.0.1", hostPort, "0.0.0.0");
+        _unityTransport.SetConnectionData("127.0.0.1", hostPort, localMultiplayer ? null : "0.0.0.0");
 
         NetworkManager.Singleton.NetworkConfig.NetworkTopology = NetworkTopologyTypes.ClientServer;
 
@@ -84,6 +85,7 @@ public class LobbyManager : MonoBehaviour
     {
         string playerInformation = "ClientName," + System.Guid.NewGuid().ToString();
         NetworkManager.Singleton.NetworkConfig.ConnectionData = System.Text.Encoding.ASCII.GetBytes(playerInformation);
+        NetworkManager.Singleton.NetworkConfig.NetworkTransport = _unityTransport;
 
         _unityTransport.SetConnectionData(hostIPAddress, ushort.Parse(hostPort));
         NetworkManager.Singleton.StartClient();

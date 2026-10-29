@@ -316,7 +316,12 @@ public class GameMaster : MonoBehaviour
             }
         }
 
-        _players.Add(new Player(playerName, playerClientID, playerGUID));
+        Player newPlayer = ScriptableObject.CreateInstance<Player>();
+        newPlayer.PlayerName = playerName;
+        newPlayer.PlayerClientID = playerClientID;
+        newPlayer.PlayerGUID = playerGUID;
+        
+        _players.Add(newPlayer);
     }
 
     /// <summary>
