@@ -39,7 +39,7 @@ public class ChronoShotResetTest
     [Test]
     public void ChronoShotBecomesInactiveAfterReset()
     {
-        _gameMaster.SetTimeRate(0.2f);
+        _gameMaster.SetTimeRateRPC(0.2f);
         _gameMaster.ResetChronoShot();
         Assert.AreEqual(1.0f, Time.timeScale);
     }
@@ -50,7 +50,7 @@ public class ChronoShotResetTest
     [Test]
     public void ChronoShotResetRestoreNormalTimeSpeed()
     {
-        _gameMaster.SetTimeRate(0.5f);
+        _gameMaster.SetTimeRateRPC(0.5f);
         Assert.AreEqual(0.5f, Time.timeScale);
         _gameMaster.ResetChronoShot();
         Assert.AreEqual(1.0f, Time.timeScale);
@@ -62,9 +62,9 @@ public class ChronoShotResetTest
     [Test]
     public void ChronoShotCanResetRepeatedly()
     {
-        _gameMaster.SetTimeRate(0.2f);
+        _gameMaster.SetTimeRateRPC(0.2f);
         {
-            _gameMaster.SetTimeRate(0.2f);
+            _gameMaster.SetTimeRateRPC(0.2f);
             Assert.DoesNotThrow(() =>
             {
                 _gameMaster.ResetChronoShot();
@@ -82,10 +82,10 @@ public class ChronoShotResetTest
     [Test] 
     public void ChronoShotCanActivateAgainAfterReset()
     {
-        _gameMaster.SetTimeRate(0.2f);
+        _gameMaster.SetTimeRateRPC(0.2f);
         _gameMaster.ResetChronoShot();
         Assert.AreEqual(1.0f, Time.timeScale);
-        _gameMaster.SetTimeRate(0.2f);
+        _gameMaster.SetTimeRateRPC(0.2f);
         Assert.AreEqual(0.2f, Time.timeScale);
     }
 }

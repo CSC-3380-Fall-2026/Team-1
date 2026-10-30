@@ -5,11 +5,13 @@ using UnityEngine;
 /// </summary>
 public class Water : MonoBehaviour
 {
+    // The amount of drag a ball will experience when it enters this object's trigger area.
     [SerializeField, Tooltip("The amount of drag a ball will experience if it passes through the water.")]
     float _dragOnBall = 1.0f;
 
-    [SerializeField, Tooltip("A list of reset objects showing where balls that stay too long will be sent to.")]
-    GameObject[] _resetPoints;
+    // The list of indices on the GameMaster's reset objects list showing potential reset locations.
+    [SerializeField, Tooltip("A list of indices on the reset objects list where balls that stay too long could be sent to.")]
+    int[] _resetPointsIDs;
 
     /// <summary>
     /// Called automatically when an object on the callback layer enters the trigger area.
@@ -81,6 +83,12 @@ public class Water : MonoBehaviour
     {
         // Resets the ball if it is now stationary.
         if (newMotionState == BallMovement.MotionState.Stationary)
-            GameMaster.Instance.ResetBall(ballObject, _resetPoints);
+        {
+            // Gets a reference to the state component on the ball object to retrieve its ID.
+            BallState ballObjectState = ballObject.GetComponent<BallState>();
+
+            // Resets the ball to the first available indicated location.
+            GameMaster.Instance.ResetBallRPC(ballObjectState.BallID.Value, _resetPointsIDs);
+        }
     }
 }

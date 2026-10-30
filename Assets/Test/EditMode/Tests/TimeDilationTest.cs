@@ -49,7 +49,7 @@ public class TimeDilationTest
     [Test]
     public void SetTimeRateSlowsGame()
     {
-        _gameMaster.SetTimeRate(0.5f);
+        _gameMaster.SetTimeRateRPC(0.5f);
         Assert.AreEqual(0.5f, Time.timeScale);
     }
 
@@ -60,8 +60,8 @@ public class TimeDilationTest
     [Test]
     public void SetTimeRateRestoreNormalSpeed()
     {
-        _gameMaster.SetTimeRate(0.5f);
-        _gameMaster.SetTimeRate();
+        _gameMaster.SetTimeRateRPC(0.5f);
+        _gameMaster.SetTimeRateRPC();
 
         Assert.AreEqual(1.0f, Time.timeScale);
     }
@@ -74,7 +74,7 @@ public class TimeDilationTest
     [Test]
     public void ChronoShotChangesActiveAndInactiveState()
     {
-        _gameMaster.SetTimeRate(0.5f);
+        _gameMaster.SetTimeRateRPC(0.5f);
         Assert.AreNotEqual(1.0f, Time.timeScale);
         _gameMaster.ResetChronoShot();
         Assert.AreEqual(1.0f, Time.timeScale);

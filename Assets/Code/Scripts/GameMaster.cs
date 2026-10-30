@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Netcode;
 using UnityEngine.SceneManagement;
 
 /// <summary>
 /// A general controller of game state.
 /// Performs general game functions that are not specific enough to be delegated to specialized objects and components.
 /// </summary>
-public class GameMaster : MonoBehaviour
+public class GameMaster : NetworkBehaviour
 {
     // A GameMaster singleton. Can only be set from within this script.
     // Any references to GameMaster.instance from anywhere will refer to one singular GameMaster, no need to search for it.
@@ -27,22 +28,31 @@ public class GameMaster : MonoBehaviour
     Hole _currentHole {get => _currentCourse.Holes[_currentHoleID];}
 
     // The players in the current game.
-    [SerializeField, Tooltip("A list of the players in the current game.")]
-    List<Player> _players;
+    // The list is synchronized across all clients, but only the server can change it.
+    [Tooltip("A list of the players in the current game.")]
+    NetworkList<Player> _players = new NetworkList<Player>(writePerm: NetworkVariableWritePermission.Server);
 
     // The index of the player whose turn it is to perform actions in the players list.
-    int _currentPlayerTurn = 0;
+    // When changing turns, all the server does is change this value. Clients handle resulting behavior.
+    [HideInInspector]
+    public NetworkVariable<int> CurrentPlayerTurn = new NetworkVariable<int>(0);
 
     // The balls in the current map. Ball index should match player index.
+    // Each client maintains a local copy of this list, as entire GameObjects are too large to synchronize.
     List<GameObject> _balls = new List<GameObject>();
 
      // The ball object to be created at the beginning of the round.
     [SerializeField, Tooltip("The ball object to be created at the beginning of the round.")]
     GameObject _ballPrefab;
 
-    // A list of reset points whose locations will be used as reset points.
-    [Tooltip("A list of reset points whose locations will be used as spawn points."), Header("Ball Reset")]
-    public GameObject[] SpawnPoints;
+    // A list of all reset points whose locations will be used as reset points.
+    // Anything that handles resets will choose a subset of these objects (via index) to determine potential locations.
+    [SerializeField, Tooltip("A list of potential reset points, including spawn points."), Header("Ball Reset")]
+    GameObject[] _resetLocationObjects;
+
+    // A list containing the indices of reset location objects in the general list that are used as spawn points.
+    [SerializeField, Tooltip("The indices of the reset location objects denoting spawn points.")]
+    int[] _spawnPointIDs;
 
     // Objects in these layers will be considered to be obstructing the reset point.
     [Tooltip("Objects in these layers will be considered to be obstructing the reset point.")]
@@ -60,11 +70,12 @@ public class GameMaster : MonoBehaviour
     /// <remarks>
     /// No status effects currently, but assuming a BallStatus component is added with said behavior, will call its reset function.
     /// </remarks>
-    /// <param name="ballToBeReset">A reference to the ball we would like to reset.</param>
-    /// <param name="resetLocationObjects">GameObjects whose locations are candidates for the reset.</param>
+    /// <param name="ballToBeResetID">The ID of the ball we would like to reset in the local balls list.</param>
+    /// <param name="resetLocationObjectsIndices">A list of indices reset location objects whose locations are candidates for the reset.</param>
     /// <param name="removeStatusEffects">Whether or not we will remove any status effects currently affecting the ball.</param>
     /// <param name="startFromIndex">Only spawn points on or after this index on the list will be considered.</param>
-    public void ResetBall(GameObject ballToBeReset, GameObject[] resetLocationObjects, bool removeStatusEffects = true, int startFromIndex = 0)
+    [Rpc(SendTo.Owner)]
+    public void ResetBallRPC(int ballToBeResetID, int[] resetLocationObjectsIndices, bool removeStatusEffects = true, int startFromIndex = 0)
     {
         // When we add a ball status component, reset its status effects.
         if (removeStatusEffects);
@@ -75,8 +86,14 @@ public class GameMaster : MonoBehaviour
         // Tracks whether or not any reset location is unoccupied so that the ball can be placed there.
         bool resetLocationClear = false;
 
-        // Makes a subarray of the reset location objects starting from the given index.
-        GameObject[] consideredResetLocationObjects = resetLocationObjects[startFromIndex..];
+        // Initializes an list that will contain the reset location GameObjects stored in the indices provided.
+        List<GameObject> consideredResetLocationObjects = new List<GameObject>();
+
+        // Adds the reset location GameObject at each given index to the list of considered objects.
+        // To account for situations where multiple balls are reset in the same physics update (and thus cannot check for obstruction),
+        // can manually skip a number of indices (if it is known a ball will be there).
+        for (int i = startFromIndex; i < resetLocationObjectsIndices.Length; i++)
+            consideredResetLocationObjects.Add(_resetLocationObjects[resetLocationObjectsIndices[i]]);
 
         // Checks if each reset location is unobstructed.
         foreach (GameObject resetLocationObject in consideredResetLocationObjects)
@@ -86,7 +103,7 @@ public class GameMaster : MonoBehaviour
 
             // It is possible that the ball's radius is not static (powerups, obstruction effects, etc).
             // Therefore, we must ensure the area we check is that of the ball's area.
-            resetLocationObjectCollider.radius = ballToBeReset.GetComponent<CircleCollider2D>().radius;
+            resetLocationObjectCollider.radius = _balls[ballToBeResetID].GetComponent<CircleCollider2D>().radius;
 
             // Considers the reset location clear if it is not touching anything on the layers we're checking. Obstructed if otherwise.
             resetLocationClear = !resetLocationObjectCollider.IsTouchingLayers(ResetObstructionLayers);
@@ -107,7 +124,7 @@ public class GameMaster : MonoBehaviour
         }
 
         // A reference to the ball's rigidbody is needed to reset any added forces and its velocity.
-        Rigidbody2D ballToBeResetRigidbody = ballToBeReset.GetComponent<Rigidbody2D>();
+        Rigidbody2D ballToBeResetRigidbody = _balls[ballToBeResetID].GetComponent<Rigidbody2D>();
 
         // Removes any added forces on the ball and any linear or angular velocity, ensuring it will be stationary on the next physics update.
         ballToBeResetRigidbody.totalForce = Vector2.zero;
@@ -115,7 +132,7 @@ public class GameMaster : MonoBehaviour
         ballToBeResetRigidbody.angularVelocity = 0;
 
         // Sets the ball's position to that of the first unobstructed reset point found.
-        ballToBeReset.transform.position = resetLocation;
+        _balls[ballToBeResetID].transform.position = resetLocation;
 
         // Resets ChronoShot so no time dilation carries over after the ball is reset.
         ResetChronoShot();
@@ -126,7 +143,7 @@ public class GameMaster : MonoBehaviour
     /// </summary>
     public void ResetChronoShot()
     {
-        SetTimeRate();
+        SetTimeRateRPC();
     }
 
     /// <summary>
@@ -141,7 +158,8 @@ public class GameMaster : MonoBehaviour
     /// 1.0f = normal, 0.0f = frozen.
     /// If left empty (or set to -1.0f), will be set to normal value defined in GameMaster.
     /// </param>
-    public void SetTimeRate(float newTimeRate = -1.0f)
+    [Rpc(SendTo.ClientsAndHost)]
+    public void SetTimeRateRPC(float newTimeRate = -1.0f)
     {
         // Uses the normal time rate when no specifc rate is provided
         if (newTimeRate == -1.0f)
@@ -164,7 +182,6 @@ public class GameMaster : MonoBehaviour
         return (float)(_currentHole.BaseScore *
             Mathf.Pow(_currentHole.ShotCountScoreFactor, shotCount) *
             Mathf.Pow(_currentHole.TimeSpentScoreFactor, timeSpent));
-
     }
 
     /// <summary>
@@ -172,61 +189,115 @@ public class GameMaster : MonoBehaviour
     /// Uses the first unobstructed one found in the list.
     /// </summary>
     /// <remarks>
-    /// Every ball after the first will have its movement component disabled: not its turn.
+    /// The function is only called on the server
     /// </remarks>
-    void SpawnBalls()
+    [Rpc(SendTo.ClientsAndHost)]
+    void SpawnBallsRPC()
     {
-        // The following operations occur for each player in the _players list.
-        for (int i = 0; i < _players.Count; i++)
+        // Despawns and destroys all ball objects for all clients if called on the host.
+        if (IsHost)
         {
-            // To prevent constant re-referencing.
-            Player player = _players[i];
+            foreach(GameObject ball in _balls)
+            {
+                // Creates a reference to the NetworkObject component on the ball GameObject, needed to despawn it.
+                NetworkObject ballNetworkObject = ball.GetComponent<NetworkObject>();
 
-            // Creates a ball at the origin.
-            GameObject playerBall = Instantiate(_ballPrefab);
+                // Despawns the ball from all clients, destroying it in the process.
+                ballNetworkObject.Despawn();
+            }
+        }
 
-            // Configures the ball's initial state. Its ID should be its new position in the _balls list.
-            BallState playerBallState = playerBall.GetComponent<BallState>();
-            playerBallState.BallID = _balls.Count;
-            playerBallState.PlayerName = player.PlayerName;
+        // The client's balls list now holds invalid/null references to the now-deleted balls, so clear them.
+        _balls.Clear();
 
-            // Moves the new ball to an unobstructed spawnpoint by the reset function.
-            // Every ball will be spawned before the next physics update, so reset cannot check for obstruction.
-            // To get around this, spawnpoints obstructed by balls just spawned are manually ignored.
-            ResetBall(playerBall, SpawnPoints, true, i);
+        // Creates a ball for each player and changes ownership to the player whose turn it is.
+        if (IsHost)
+        {
+            // Since spawning all the balls only happens at the beginning of the hole, start at the first player's turn.
+            CurrentPlayerTurn.Value = 0;
 
-            // Disables the movement component of every ball that isn't the first on the list.
-            BallMovement playerBallMovement = playerBall.GetComponent<BallMovement>();
-            playerBallMovement.enabled = playerBallState.BallID == 0;
-            playerBallMovement.BallTurnBegan?.Invoke();
+            // The following operations occur for each player in the _players list.
+            for (int i = 0; i < _players.Count; i++)
+            {
+                // To prevent constant re-referencing.
+                Player player = _players[i];
 
-            // Adds the new ball to the _balls list.
-            _balls.Add(playerBall);
+                // Creates a ball at the origin.
+                GameObject playerBall = Instantiate(_ballPrefab);
+
+                // Configures the ball's initial state.
+                // Its ID should be the position of the owning player on the players list.
+                BallState playerBallState = playerBall.GetComponent<BallState>();
+                playerBallState.BallID.Value = i;
+                playerBallState.PlayerName.Value = player.PlayerName.ToString();
+
+                // Gets a reference to the new ball's NetworkObject component and spawns it on each client.
+                NetworkObject ballNetworkObjectComponent = playerBall.GetComponent<NetworkObject>();
+                ballNetworkObjectComponent.Spawn();
+
+                // Moves the new ball to an unobstructed spawnpoint by the reset function.
+                // Every ball will be spawned before the next physics update, so reset cannot check for obstruction.
+                // To get around this, spawnpoints obstructed by balls just spawned are manually ignored.
+                ResetBallRPC(i, _spawnPointIDs, true, i);
+
+                // Every ball should be owned by the player whose turn it is, so that their physics simulation is accurate.
+                ballNetworkObjectComponent.ChangeOwnership(_players[CurrentPlayerTurn.Value].PlayerClientID);
+            }
         }
     }
 
     /// <summary>
-    /// Handles ending the current player's turn and beginning the next.
-    /// Currently disables the movement of the ball ending its turn and enables that of the ball beginning its own.
+    /// Adds an existing ball to the local client's balls list in the appropriate order.
+    /// </summary>
+    /// <param name="ballGameObject">The ball GameObject to be added.</param>
+    public void AddPlayerBall(GameObject ballGameObject)
+    {
+        // Adds the ball to the list in the last position. Likely out of order.
+        _balls.Add(ballGameObject);
+
+        // A list that will store the balls newly reordered according to their IDs.
+        List<GameObject> temporaryListForReorganization = new List<GameObject>();
+
+        // Extends the temporary list to match the length of the balls list.
+        while (temporaryListForReorganization.Count < _balls.Count)
+            temporaryListForReorganization.Add(null);
+
+        // The following occurs for every ball in the balls list.
+        for (int i = 0; i < _balls.Count; i++)
+        {
+            // Makes a reference to the ball's state component in order to retrieve its ID.
+            BallState ballStateComponent = _balls[i].GetComponent<BallState>();
+
+            // Inserts the ball into the correct position on the temporary list.
+            temporaryListForReorganization.Insert(ballStateComponent.BallID.Value, _balls[i]);
+        }
+
+        // Replaces the balls list with the temporary list now that the temporary list contains the ordered balls.
+        _balls = temporaryListForReorganization;
+    }
+
+    /// <summary>
+    /// Handles ending the current player's turn and beginning the next. It is only run on the server/host.
+    /// Changes the current player turn variable to the ID of the player whose turn it is now.
     /// Moves to next hole if all balls have entered the cup.
     /// </summary>
-    public void NextTurn()
+    [Rpc(SendTo.Server)]
+    public void NextTurnRPC()
     {
-        // Disables the ball movement component of the ball controlled by the player whose turn is ending.
-        BallMovement currentPlayerBallMovementComponent = _balls[_currentPlayerTurn].GetComponent<BallMovement>();
-        currentPlayerBallMovementComponent.enabled = false;
-
         // Tracks whether any active ball was found in the balls list.
         bool anyBallsActive = false;
+
+        // Used to avoid triggering functions subscribed to the value's change while deciding whose turn it is.
+        int nextTurnIndexTemporary = CurrentPlayerTurn.Value;
 
         // Loops through the balls list once to handle scenario where there is no active ball to switch turn to.
         for (int i = 0; i < _balls.Count; i++)
         {
             // Makes the next player on the list the one whose turn it is. Loops to 0 if end reached.
-            _currentPlayerTurn = (_currentPlayerTurn + 1) % _players.Count;
+            nextTurnIndexTemporary = (nextTurnIndexTemporary + 1) % _players.Count;
 
             // Exits the loop if any active ball is found.
-            if (_balls[_currentPlayerTurn].activeSelf)
+            if (_balls[nextTurnIndexTemporary].activeSelf)
             {
                 anyBallsActive = true;
                 break;
@@ -241,11 +312,22 @@ public class GameMaster : MonoBehaviour
             return;
         }
 
-        // Enables the ball movement component of the ball controlled by the player whose turn is beginning.
-        // Calls the event indicating the ball began its turn, so any related (subscribed)functions can be called.
-        BallMovement nextPlayerBallMovementComponent = _balls[_currentPlayerTurn].GetComponent<BallMovement>();
-        nextPlayerBallMovementComponent.enabled = true;
-        nextPlayerBallMovementComponent.BallTurnBegan?.Invoke();
+        // Makes the client owning the player whose turn it is the new owner of all the ball NetworkObjects.
+        foreach (GameObject ball in _balls)
+        {
+            // Only need to change owner if the ball is active.
+            if (ball.activeSelf)
+            {
+                // Gets a reference to the ball's NetworkObject component in order to change its owner.
+                NetworkObject ballNetworkObjectComponent = ball.GetComponent<NetworkObject>();
+
+                // Changes the owner of the ball to the client that contains the player whose turn it now is.
+                ballNetworkObjectComponent.ChangeOwnership(_players[nextTurnIndexTemporary].PlayerClientID);
+            }
+        }
+
+        // Actually changes the player turn value, triggering functions subscribed to the value's change event.
+        CurrentPlayerTurn.Value = nextTurnIndexTemporary;
     }
 
     /// <summary>
@@ -275,53 +357,86 @@ public class GameMaster : MonoBehaviour
     }
 
     /// <summary>
-    /// Called when a ball enters the hole.
+    /// Called when a ball enters the hole. Executed on every client (including the host).
     /// Gets relevant information to update its score and disables it.
     /// </summary>
-    /// <param name="ballThatEnteredHole">The ball gameObject which just entered the hole.</param>
-    public void HandleGoal(GameObject ballThatEnteredHole)
+    /// <param name="ballThatEnteredHoleID">The ID of the ball gameObject in the balls list which just entered the hole.</param>
+    [Rpc(SendTo.ClientsAndHost)]
+    public void HandleGoalRPC(int ballThatEnteredHoleID)
     {
-        // Gets the ball's movement component for the launch count and state component for its ID.
-        BallMovement ballThatEnteredHoleMovementComponent = ballThatEnteredHole.GetComponent<BallMovement>();
-        BallTimeManager ballThatEnteredHoleTimeManagerComponent = ballThatEnteredHole.GetComponent<BallTimeManager>();
-        BallState ballThatEnteredHoleStateComponent = ballThatEnteredHole.GetComponent<BallState>();
+        // Only the host needs to calculate the score and update the value for all the clients.
+        if (IsHost)
+        {
+            // Gets the ball's movement component for the launch count and state component for its ID.
+            BallMovement ballThatEnteredHoleMovementComponent = _balls[ballThatEnteredHoleID].GetComponent<BallMovement>();
+            BallTimeManager ballThatEnteredHoleTimeManagerComponent = _balls[ballThatEnteredHoleID].GetComponent<BallTimeManager>();
 
-        // Calculates the player's new score and assigns it to the appropriate player.
-        int ballID = ballThatEnteredHoleStateComponent.BallID;
-        int launchCount = ballThatEnteredHoleMovementComponent.LaunchCount;
-        float timeSpent = ballThatEnteredHoleTimeManagerComponent.TimeSpentInPlay;
-        _players[ballID].Score += CalculateScore(launchCount, timeSpent);
+            // Calculates the player's new score and assigns it to the appropriate player.
+            int launchCount = ballThatEnteredHoleMovementComponent.LaunchCount.Value;
+            float timeSpent = ballThatEnteredHoleTimeManagerComponent.TimeSpentInPlay.Value;
 
-        // To be replaced with UI visuals when we get there.
-        Debug.LogFormat("Player: {0}, Launches: {1}, Time Spent: {2}, Score: {3}", ballID, launchCount, timeSpent, _players[ballID].Score);
+            // Players structs in the players NetworkList cannot be changed directly, but can be set to a new Player.
+            // Creates a new player struct based on the old player, sets the new score and replaces the old one with it.
+            Player playerWhoOwnsBall = _players[ballThatEnteredHoleID];
+            playerWhoOwnsBall.PlayerScore += CalculateScore(launchCount, timeSpent);
+            _players[ballThatEnteredHoleID] = playerWhoOwnsBall;
+
+            // To be replaced with UI visuals when we get there.
+            Debug.LogFormat("Player: {0}, Launches: {1}, Time Spent: {2}, Score: {3}", ballThatEnteredHoleID, launchCount, timeSpent, _players[ballThatEnteredHoleID].PlayerScore);
+        }
 
         // Deactivates the ball now that it has reached the goal.
-        ballThatEnteredHole.SetActive(false);
+        _balls[ballThatEnteredHoleID].SetActive(false);
 
         // Changes turn to the next on the list if it was this ball's turn.
-        if (ballThatEnteredHoleStateComponent.BallID == _currentPlayerTurn)
-            NextTurn();
+        // Host check needed to prevent the next turn function being called again for every client.
+        if (ballThatEnteredHoleID == CurrentPlayerTurn.Value && IsHost)
+            NextTurnRPC();
     }
 
+    /// <summary>
+    /// Creates a new player struct based on the given information and adds it to the synchronized list.
+    /// Should only every be called on the server/host.
+    /// </summary>
+    /// <param name="playerName">The name of the newly added player.</param>
+    /// <param name="playerClientID">The NetworkClientID that owns the newly added player.</param>
+    /// <param name="playerGUID">The GUID of the newly added player. Used to determine if reconnecting.</param>
     public void AddPlayer(string playerName, ulong playerClientID, string playerGUID)
     {
-        foreach(Player player in _players)
+        // Throws a warning and exits the function if it is not executing on the host.
+        if (!IsHost)
         {
-            if (player.PlayerGUID == playerGUID)
-            {
-                player.PlayerClientID = playerClientID;
-                Debug.Log("Player already exists. Updated client ID");
+            Debug.LogWarning("AddPlayer called while not the host. Unexpected and improper.");
+            return;
+        }
 
+        // Updates the player's ClientID if the player was already in the list based on GUID.
+        for(int i = 0; i < _players.Count; i++)
+        {
+            // GUID will be determined and stored when launching the game (probably PlayerPrefs).
+            if (_players[i].PlayerGUID == playerGUID)
+            {
+                // Players in the NetworkList cannot be edited directly, so makes a clone with the new ID change
+                // then sets the player to the new clone.
+                Player playerThatExists = _players[i];
+                playerThatExists.PlayerClientID = playerClientID;
+                _players[i] = playerThatExists;
+
+                Debug.Log("Player already exists. Updated client ID");
                 return;
             }
         }
 
-        Player newPlayer = ScriptableObject.CreateInstance<Player>();
+        // Makes a new player struct with the given information.
+        Player newPlayer = new Player();
         newPlayer.PlayerName = playerName;
         newPlayer.PlayerClientID = playerClientID;
         newPlayer.PlayerGUID = playerGUID;
-        
+
+        // Adds the player to the players list, automatically synchronizing across connected clients.
         _players.Add(newPlayer);
+
+        Debug.Log($"Added {newPlayer.PlayerName} with client ID {newPlayer.PlayerClientID}.");
     }
 
     /// <summary>
@@ -338,14 +453,5 @@ public class GameMaster : MonoBehaviour
             Destroy(this);
         else
             Instance = this;
-    }
-
-    /// <summary>
-    /// Start is called once before the first execution of Update after the MonoBehaviour is created.
-    /// Currently just spawns each player's ball.
-    /// </summary>
-    void Start()
-    {
-        SpawnBalls();
     }
 }
