@@ -23,11 +23,45 @@ public class BallCamera : MonoBehaviour
     void UpdateCameraTarget()
     {
         BallState[] balls = FindObjectsByType<BallState>(FindObjectsSortMode.None);
+
+        // Assume all players on this device have finished until an active local ball is found.
+        bool allLocalPlayersFinished = true;
+
         foreach (BallState ball in balls)
         {
-            if (ball.BallID.Value == GameMaster.Instance.CurrentPlayerTurn.Value)
+            int ballID = ball.BallID.Value;
+
+            // Checks whether this ball belongs to a player on this device.
+            if (GameMaster.Instance.Players[ballID].PlayerClientID ==
+                Unity.Netcode.NetworkManager.Singleton.LocalClientId)
             {
-                _targetBall = ball.transform;
+                // If a local ball is still active, this device still has a player in the hole.
+                if (ball.gameObject.activeSelf)
+                {
+                    allLocalPlayersFinished = false;
+                    break;
+                }
+            }
+        }
+
+        foreach (BallState ball in balls)
+        {
+            int ballID = ball.BallID.Value;
+
+            if (ballID == GameMaster.Instance.CurrentPlayerTurn.Value)
+            {
+                bool ballBelongsToLocalPlayer =
+                    GameMaster.Instance.Players[ballID].PlayerClientID ==
+                    Unity.Netcode.NetworkManager.Singleton.LocalClientId;
+
+                /*Follow local players normally. If all local players have finished,
+                 allow the camera to spectate the player whose turn is active.
+                 */
+                if (ballBelongsToLocalPlayer || allLocalPlayersFinished)
+                {
+                    _targetBall = ball.transform;
+                }
+
                 return;
             }
         }
@@ -48,10 +82,15 @@ public class BallCamera : MonoBehaviour
     void LateUpdate()
     {
         if (_targetBall == null)
-            return;
+        {
+            UpdateCameraTarget();
+            if (_targetBall == null)
+                return;
+        }
+
         
         Vector3 targetPosition = new Vector3(
-            _targetBall.position.x, _targetBall.position.y, transform.position.z
+            _targetBall.position.x, transform.position.y, transform.position.z
         );
 
         transform.position = Vector3.SmoothDamp(
