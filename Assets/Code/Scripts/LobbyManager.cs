@@ -39,7 +39,7 @@ public class LobbyManager : MonoBehaviour
     /// </summary>
     /// <param name="dontHostOnLAN">Determines whether or not the host will listen on LocalHost or any interface.</param>
     /// <param name="hostPort">The port that will be used to handle connections.</param>
-    void BeginHosting(bool dontHostOnLAN, ushort hostPort)
+    public void BeginHosting(bool dontHostOnLAN, ushort hostPort)
     {
         // Tells the NetworkManager to use UnityTransport as the transport layer.
         NetworkManager.Singleton.NetworkConfig.NetworkTransport = _unityTransport;
@@ -50,25 +50,20 @@ public class LobbyManager : MonoBehaviour
         // Tells the NetworkManager to use a ClientServer network topology. Includes simultaneous Server/Client (host).
         NetworkManager.Singleton.NetworkConfig.NetworkTopology = NetworkTopologyTypes.ClientServer;
 
+        // Constructs the payload consisting of the player's name and GUID.
+        string playerInformation = "Host," + System.Guid.NewGuid().ToString();
+
+        // Sets the payload to the previously constructed string.
+        NetworkManager.Singleton.NetworkConfig.ConnectionData = System.Text.Encoding.ASCII.GetBytes(playerInformation);
+
+        // Tells the NetworkManager to handle new connections via a callback rather than automatically accepting them.
+        NetworkManager.Singleton.NetworkConfig.ConnectionApproval = true;
+
         // Subscribes relevant functions to events involving networking states.
         NetworkManager.Singleton.ConnectionApprovalCallback = HandleConnectionApproval;
-        NetworkManager.Singleton.OnServerStarted += ServerStartedHandler;
 
         // Starts hosting the lobby based on the previously set information (device acts as both the server and a client).
         NetworkManager.Singleton.StartHost();
-    }
-
-    /// <summary>
-    /// A callback function called when the server is started.
-    /// Adds a player for the host if the server was started in host mode rather than a dedicated server.
-    /// </summary>
-    void ServerStartedHandler()
-    {
-        // Adds a player for the host if the handler is executing on the host, throws a warning if executing on a client.
-        if (NetworkManager.Singleton.IsHost)
-            GameMaster.Instance.AddPlayer("Host", NetworkManager.Singleton.LocalClientId, System.Guid.NewGuid().ToString());
-        else if (NetworkManager.Singleton.IsClient)
-            Debug.LogWarning("Non-host client received server started event.");
     }
 
     /// <summary>
@@ -79,7 +74,7 @@ public class LobbyManager : MonoBehaviour
     void HandleConnectionApproval(NetworkManager.ConnectionApprovalRequest approvalRequest, NetworkManager.ConnectionApprovalResponse approvalResponse)
     {
         // Denies the request if the lobby is full.
-        if (NetworkManager.Singleton.ConnectedClients.Count < maxPlayers)
+        if (NetworkManager.Singleton.ConnectedClients.Count >= maxPlayers)
         {
             approvalResponse.Reason = "The lobby is full already.";
             approvalResponse.Approved = false;
@@ -124,7 +119,7 @@ public class LobbyManager : MonoBehaviour
     /// </summary>
     /// <param name="hostIPAddress">The IP address of the host (loopback address works for same-device multiplayer).</param>
     /// <param name="hostPort">The port listening for connections on the hosting device.</param>
-    void ConnectToHost(string hostIPAddress, string hostPort)
+    public void ConnectToHost(string hostIPAddress, string hostPort)
     {
         // Constructs the payload consisting of the player's name and GUID.
         string playerInformation = "ClientName," + System.Guid.NewGuid().ToString();

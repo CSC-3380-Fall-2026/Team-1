@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.SceneManagement;
+using System;
 
 /// <summary>
 /// A general controller of game state.
@@ -30,7 +31,7 @@ public class GameMaster : NetworkBehaviour
     // The players in the current game.
     // The list is synchronized across all clients, but only the server can change it.
     [Tooltip("A list of the players in the current game.")]
-    NetworkList<Player> _players = new NetworkList<Player>(writePerm: NetworkVariableWritePermission.Server);
+    public NetworkList<Player> Players = new NetworkList<Player>(writePerm: NetworkVariableWritePermission.Server);
 
     // The index of the player whose turn it is to perform actions in the players list.
     // When changing turns, all the server does is change this value. Clients handle resulting behavior.
@@ -192,7 +193,7 @@ public class GameMaster : NetworkBehaviour
     /// The function is only called on the server
     /// </remarks>
     [Rpc(SendTo.ClientsAndHost)]
-    void SpawnBallsRPC()
+    public void SpawnBallsRPC()
     {
         // Despawns and destroys all ball objects for all clients if called on the host.
         if (IsHost)
@@ -217,10 +218,10 @@ public class GameMaster : NetworkBehaviour
             CurrentPlayerTurn.Value = 0;
 
             // The following operations occur for each player in the _players list.
-            for (int i = 0; i < _players.Count; i++)
+            for (int i = 0; i < Players.Count; i++)
             {
                 // To prevent constant re-referencing.
-                Player player = _players[i];
+                Player player = Players[i];
 
                 // Creates a ball at the origin.
                 GameObject playerBall = Instantiate(_ballPrefab);
@@ -241,7 +242,7 @@ public class GameMaster : NetworkBehaviour
                 ResetBallRPC(i, _spawnPointIDs, true, i);
 
                 // Every ball should be owned by the player whose turn it is, so that their physics simulation is accurate.
-                ballNetworkObjectComponent.ChangeOwnership(_players[CurrentPlayerTurn.Value].PlayerClientID);
+                ballNetworkObjectComponent.ChangeOwnership(Players[CurrentPlayerTurn.Value].PlayerClientID);
             }
         }
     }
@@ -256,7 +257,7 @@ public class GameMaster : NetworkBehaviour
         _balls.Add(ballGameObject);
 
         // A list that will store the balls newly reordered according to their IDs.
-        List<GameObject> temporaryListForReorganization = new List<GameObject>();
+        List<GameObject> temporaryListForReorganization = new List<GameObject>(_balls.Count);
 
         // Extends the temporary list to match the length of the balls list.
         while (temporaryListForReorganization.Count < _balls.Count)
@@ -269,7 +270,7 @@ public class GameMaster : NetworkBehaviour
             BallState ballStateComponent = _balls[i].GetComponent<BallState>();
 
             // Inserts the ball into the correct position on the temporary list.
-            temporaryListForReorganization.Insert(ballStateComponent.BallID.Value, _balls[i]);
+            temporaryListForReorganization[ballStateComponent.BallID.Value] = _balls[i];
         }
 
         // Replaces the balls list with the temporary list now that the temporary list contains the ordered balls.
@@ -294,7 +295,7 @@ public class GameMaster : NetworkBehaviour
         for (int i = 0; i < _balls.Count; i++)
         {
             // Makes the next player on the list the one whose turn it is. Loops to 0 if end reached.
-            nextTurnIndexTemporary = (nextTurnIndexTemporary + 1) % _players.Count;
+            nextTurnIndexTemporary = (nextTurnIndexTemporary + 1) % Players.Count;
 
             // Exits the loop if any active ball is found.
             if (_balls[nextTurnIndexTemporary].activeSelf)
@@ -322,7 +323,7 @@ public class GameMaster : NetworkBehaviour
                 NetworkObject ballNetworkObjectComponent = ball.GetComponent<NetworkObject>();
 
                 // Changes the owner of the ball to the client that contains the player whose turn it now is.
-                ballNetworkObjectComponent.ChangeOwnership(_players[nextTurnIndexTemporary].PlayerClientID);
+                ballNetworkObjectComponent.ChangeOwnership(Players[nextTurnIndexTemporary].PlayerClientID);
             }
         }
 
@@ -377,12 +378,12 @@ public class GameMaster : NetworkBehaviour
 
             // Players structs in the players NetworkList cannot be changed directly, but can be set to a new Player.
             // Creates a new player struct based on the old player, sets the new score and replaces the old one with it.
-            Player playerWhoOwnsBall = _players[ballThatEnteredHoleID];
+            Player playerWhoOwnsBall = Players[ballThatEnteredHoleID];
             playerWhoOwnsBall.PlayerScore += CalculateScore(launchCount, timeSpent);
-            _players[ballThatEnteredHoleID] = playerWhoOwnsBall;
+            Players[ballThatEnteredHoleID] = playerWhoOwnsBall;
 
             // To be replaced with UI visuals when we get there.
-            Debug.LogFormat("Player: {0}, Launches: {1}, Time Spent: {2}, Score: {3}", ballThatEnteredHoleID, launchCount, timeSpent, _players[ballThatEnteredHoleID].PlayerScore);
+            Debug.LogFormat("Player: {0}, Launches: {1}, Time Spent: {2}, Score: {3}", ballThatEnteredHoleID, launchCount, timeSpent, Players[ballThatEnteredHoleID].PlayerScore);
         }
 
         // Deactivates the ball now that it has reached the goal.
@@ -403,24 +404,17 @@ public class GameMaster : NetworkBehaviour
     /// <param name="playerGUID">The GUID of the newly added player. Used to determine if reconnecting.</param>
     public void AddPlayer(string playerName, ulong playerClientID, string playerGUID)
     {
-        // Throws a warning and exits the function if it is not executing on the host.
-        if (!IsHost)
-        {
-            Debug.LogWarning("AddPlayer called while not the host. Unexpected and improper.");
-            return;
-        }
-
         // Updates the player's ClientID if the player was already in the list based on GUID.
-        for(int i = 0; i < _players.Count; i++)
+        for(int i = 0; i < Players.Count; i++)
         {
             // GUID will be determined and stored when launching the game (probably PlayerPrefs).
-            if (_players[i].PlayerGUID == playerGUID)
+            if (Players[i].PlayerGUID == playerGUID)
             {
                 // Players in the NetworkList cannot be edited directly, so makes a clone with the new ID change
                 // then sets the player to the new clone.
-                Player playerThatExists = _players[i];
+                Player playerThatExists = Players[i];
                 playerThatExists.PlayerClientID = playerClientID;
-                _players[i] = playerThatExists;
+                Players[i] = playerThatExists;
 
                 Debug.Log("Player already exists. Updated client ID");
                 return;
@@ -434,9 +428,9 @@ public class GameMaster : NetworkBehaviour
         newPlayer.PlayerGUID = playerGUID;
 
         // Adds the player to the players list, automatically synchronizing across connected clients.
-        _players.Add(newPlayer);
+        Players.Add(newPlayer);
 
-        Debug.Log($"Added {newPlayer.PlayerName} with client ID {newPlayer.PlayerClientID}.");
+        Debug.Log($"Added {newPlayer.PlayerName} with client ID {newPlayer.PlayerClientID}. Players in lobby: {Players.Count}.");
     }
 
     /// <summary>

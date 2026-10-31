@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 15024, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: OneConnecting
+  m_Name: HostAndTwoEditorClients
   m_EditorClassIdentifier: UnityEditor.MultiplayerModule.dll::Unity.Multiplayer.PlayMode.Editor.ScenarioConfig
-  m_Description: Testing One Client
+  m_Description: Host and One Editor Client
   m_EnableEditors: 1
   m_MainEditorInstance:
     Name: Main Editor

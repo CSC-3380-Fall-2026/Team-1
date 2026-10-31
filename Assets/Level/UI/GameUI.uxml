@@ -2,33 +2,34 @@
     <ui:VisualElement name="GameUIRoot" style="flex-grow: 1;">
         <ui:VisualElement name="ConnectedPlayersBackground" style="flex-grow: 1; min-width: 25%; max-width: 25%;">
             <ui:Label text="Connected Players" name="ConnectedPlayersLabel" style="align-self: center; background-color: rgba(51, 51, 51, 0.784); color: rgb(255, 255, 255);"/>
-            <ui:ListView name="ConnectedPlayersListView" style="height: 41px; right: auto; bottom: auto; width: 25%; top: 0%; background-color: rgba(51, 51, 51, 0.784); color: rgb(255, 255, 255); max-width: 100%; min-width: 100%;"/>
+            <ui:ListView name="ConnectedPlayersListView" focusable="false" selection-type="None" style="height: 79px; right: auto; bottom: auto; width: 25%; top: 0%; background-color: rgba(51, 51, 51, 0.784); color: rgb(255, 255, 255); max-width: 100%; min-width: 100%;"/>
         </ui:VisualElement>
         <ui:VisualElement name="LobbyBackground" style="flex-grow: 1; bottom: auto; right: auto; top: 25%; left: 5%; width: 50%; height: 50%; max-height: 50%; max-width: 90%; min-width: 90%; min-height: 50%; background-color: rgba(51, 51, 51, 0.784); align-self: center; align-content: flex-start; position: absolute;">
             <ui:VisualElement name="HostGameBackground" style="flex-grow: 1; flex-direction: row; justify-content: center; align-self: stretch; height: 50%; min-height: 50%; max-height: 50%;">
                 <ui:VisualElement name="HostGameLabelContentContainer" style="flex-grow: 1; min-height: 100%; max-height: 100%;">
                     <ui:VisualElement name="HostGameLabelContainer" style="flex-grow: 1;">
-                        <ui:Label text="Host Game" name="HostGameLabel" style="align-self: center; min-height: 20px; max-height: 20px;"/>
+                        <ui:Label text="Host Game" name="HostGameLabel" style="align-self: center; min-height: 20px; max-height: 20px; color: rgb(255, 255, 255);"/>
                     </ui:VisualElement>
                     <ui:VisualElement name="HostGameContentContainer" style="flex-grow: 1; flex-direction: row; justify-content: space-around;">
-                        <ui:RadioButtonGroup label="Multiplayer Type" name="LocalOrLanRadioButtonGroup" choices="Local,LAN" value="1" style="align-self: center;"/>
-                        <ui:IntegerField label="Port" value="12345" name="HostPortIntegerField" style="flex-shrink: 0.5; align-self: center;"/>
+                        <ui:RadioButtonGroup label="Multiplayer Type" name="LocalOrLanRadioButtonGroup" choices="Local,LAN" value="1" style="align-self: center; color: rgb(26, 26, 26);"/>
+                        <ui:IntegerField label="Port" value="12345" name="HostPortIntegerField" style="flex-shrink: 0.5; align-self: center; color: rgb(26, 26, 26);"/>
                         <ui:Button text="Host" name="HostGameButton" style="align-self: center;"/>
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement name="JoinGameBackground" style="flex-grow: 1; flex-direction: row; align-items: center; justify-content: center; min-height: 50%; max-height: 50%; height: 50%;">
                 <ui:VisualElement name="JoinGameLabelContentContainer" style="flex-grow: 1; min-height: 100%; max-height: 100%;">
-                    <ui:VisualElement name="JoinGameLabelContainer" style="flex-grow: 1; min-height: auto; max-height: none; align-self: auto;">
+                    <ui:VisualElement name="JoinGameLabelContainer" style="flex-grow: 1; min-height: auto; max-height: none; align-self: auto; color: rgb(255, 255, 255);">
                         <ui:Label text="Join Game" name="JoinGameLabel" style="align-self: center; min-height: 20px; max-height: 20px;"/>
                     </ui:VisualElement>
                     <ui:VisualElement name="JoinGameContentContainer" style="flex-grow: 1; flex-direction: row; justify-content: space-around;">
-                        <ui:TextField label="IP Address" placeholder-text="0.0.0.0" name="IPAddressTextField" style="align-self: center;"/>
-                        <ui:IntegerField label="Port" value="12345" name="JoinPortIntegerField" style="align-items: center; align-self: center;"/>
+                        <ui:TextField label="IP Address" placeholder-text="0.0.0.0" name="IPAddressTextField" value="127.0.0.1" style="align-self: center; color: rgb(26, 26, 26);"/>
+                        <ui:IntegerField label="Port" value="12345" name="JoinPortIntegerField" style="align-items: center; align-self: center; color: rgb(26, 26, 26);"/>
                         <ui:Button text="Join" name="JoinGameButton" style="align-self: center;"/>
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:Button text="Spawn Balls" name="SpawnBallsButton" enabled="true" selectable="false" focusable="false" style="visibility: hidden; min-width: 50%; max-width: 50%; align-self: center; bottom: 5%;"/>
     </ui:VisualElement>
 </ui:UXML>
