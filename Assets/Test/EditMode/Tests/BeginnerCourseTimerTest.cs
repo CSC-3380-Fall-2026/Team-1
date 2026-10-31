@@ -121,7 +121,7 @@ public class BeginnerCourseTimerTest
         /* Reflection checks the private timer state to verify that measuring time starts
         and stops correctly
         */
-        
+
         FieldInfo measureTimeField = typeof(BallTimeManager).GetField(
             "_measureTime", BindingFlags.NonPublic | BindingFlags.Instance
         );
@@ -138,10 +138,21 @@ public class BeginnerCourseTimerTest
     [Test]
     public void TimerResetsWhenNewCourseBegins()
     {
+
+        /*
+        Reflection sets the timer to a nonzero value to simulate
+        time accumulated from a previous course
+        */
+        
         typeof(BallTimeManager)
             .GetField("<TimeSpentInPlay>k__BackingField",
                 BindingFlags.NonPublic | BindingFlags.Instance)
             .SetValue(_ballTimeManager, 10f);
+        
+        /* 
+        Reflection calls the private Start method to simulate
+        initialization when a new course begins
+        */
 
         MethodInfo startMethod = typeof(BallTimeManager).GetMethod(
             "Start",
