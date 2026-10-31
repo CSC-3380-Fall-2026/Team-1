@@ -1124,6 +1124,112 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 857a117c77e349542ae8b5a9d3da48ca, type: 3}
+--- !u!1 &265141156
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 265141159}
+  - component: {fileID: 265141158}
+  - component: {fileID: 265141160}
+  m_Layer: 0
+  m_Name: NetworkManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &265141158
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 265141156}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 593a2fe42fa9d37498c96f9a383b6521, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkManager
+  NetworkManagerExpanded: 0
+  NetworkConfig:
+    ProtocolVersion: 0
+    NetworkTransport: {fileID: 0}
+    PlayerPrefab: {fileID: 0}
+    Prefabs:
+      NetworkPrefabsLists:
+      - {fileID: 11400000, guid: 30d5c9d47a7302c4c8afcef41767c7a9, type: 2}
+    TickRate: 30
+    ClientConnectionBufferTimeout: 10
+    ConnectionApproval: 1
+    ConnectionData: 
+    EnableTimeResync: 0
+    TimeResyncInterval: 30
+    EnsureNetworkVariableLengthSafety: 0
+    EnableSceneManagement: 1
+    ForceSamePrefabs: 1
+    RecycleNetworkIds: 1
+    NetworkIdRecycleDelay: 120
+    RpcHashSize: 0
+    LoadSceneTimeOut: 120
+    SpawnTimeout: 10
+    EnableNetworkLogs: 1
+    NetworkTopology: 0
+    UseCMBService: 0
+    AutoSpawnPlayerPrefabClientSide: 1
+    NetworkProfilingMetrics: 1
+    OldPrefabList: []
+  RunInBackground: 1
+  LogLevel: 1
+--- !u!4 &265141159
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 265141156}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &265141160
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 265141156}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6960e84d07fb87f47956e7a81d71c4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Transports.UTP.UnityTransport
+  m_ProtocolType: 0
+  m_UseWebSockets: 0
+  m_UseEncryption: 0
+  m_MaxPacketQueueSize: 128
+  m_MaxPayloadSize: 6144
+  m_HeartbeatTimeoutMS: 500
+  m_ConnectTimeoutMS: 1000
+  m_MaxConnectAttempts: 60
+  m_DisconnectTimeoutMS: 30000
+  ConnectionData:
+    Address: 127.0.0.1
+    Port: 7777
+    WebSocketPath: /
+    ServerListenAddress: 127.0.0.1
+    ClientBindPort: 0
+  DebugSimulator:
+    PacketDelayMS: 0
+    PacketJitterMS: 0
+    PacketDropRate: 0
 --- !u!1001 &274054309
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1383,6 +1489,26 @@ PrefabInstance:
       propertyPath: 'ResetPoints.Array.data[3]'
       value: 
       objectReference: {fileID: 1081610627}
+    - target: {fileID: 6606936914807696125, guid: bb1ca9371adacb44eb4a5674fb6dc191, type: 3}
+      propertyPath: _resetPointsIDs.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6606936914807696125, guid: bb1ca9371adacb44eb4a5674fb6dc191, type: 3}
+      propertyPath: '_resetPointsIDs.Array.data[0]'
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6606936914807696125, guid: bb1ca9371adacb44eb4a5674fb6dc191, type: 3}
+      propertyPath: '_resetPointsIDs.Array.data[1]'
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6606936914807696125, guid: bb1ca9371adacb44eb4a5674fb6dc191, type: 3}
+      propertyPath: '_resetPointsIDs.Array.data[2]'
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 6606936914807696125, guid: bb1ca9371adacb44eb4a5674fb6dc191, type: 3}
+      propertyPath: '_resetPointsIDs.Array.data[3]'
+      value: 7
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1403,6 +1529,75 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3617660425117786542, guid: 857a117c77e349542ae8b5a9d3da48ca, type: 3}
   m_PrefabInstance: {fileID: 1612474520}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &818062913
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 818062914}
+  - component: {fileID: 818062915}
+  - component: {fileID: 818062916}
+  m_Layer: 0
+  m_Name: UIManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &818062914
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 818062913}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &818062915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 818062913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c18d21d755f16a14898066e2deed60e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  _gameUIAsset: {fileID: 9197481963319205126, guid: ba6ba615c95e1e44d95e2b97bf944457, type: 3}
+--- !u!114 &818062916
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 818062913}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: 55890201cc07b5844bf3fe7e0d0de952, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 0}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &896972326
 GameObject:
   m_ObjectHideFlags: 0
@@ -2163,7 +2358,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1091905507}
+  - component: {fileID: 1091905510}
   - component: {fileID: 1091905508}
+  - component: {fileID: 1091905509}
   m_Layer: 0
   m_Name: GameMaster
   m_TagString: Untagged
@@ -2198,20 +2395,72 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6ee600c8ac31ec409535a9a71b24e70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  ShowTopMostFoldoutHeaderGroup: 1
   _currentCourse: {fileID: 11400000, guid: d2a5c11b0027b7a4e9b4fb333c38cf99, type: 2}
-  _players:
-  - {fileID: 11400000, guid: 43e29bbe6991f0543b8d0b1c87b7a677, type: 2}
-  - {fileID: 11400000, guid: 23e450859584b6043979e27a52775b8a, type: 2}
+  Players:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+  CurrentPlayerTurn:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
   _ballPrefab: {fileID: 1446885788393809777, guid: 0827ca675c70eba46a467692dc4b73b6, type: 3}
-  SpawnPoints:
+  _resetLocationObjects:
   - {fileID: 2144868108}
   - {fileID: 501132060}
   - {fileID: 1006882590}
   - {fileID: 274054311}
+  - {fileID: 1868556325}
+  - {fileID: 714108051}
+  - {fileID: 302389712}
+  - {fileID: 1081610627}
+  _spawnPointIDs: 00000000010000000200000003000000
   ResetObstructionLayers:
     serializedVersion: 2
     m_Bits: 64
   _normalTimeRate: 1
+--- !u!114 &1091905509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1091905506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b65848719cd96584e8a9d79eac4f8ca7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ChronoShot::LobbyManager
+  maxPlayers: 4
+--- !u!114 &1091905510
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1091905506}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 2673672575
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  m_InScenePlacedDisabledByDefault: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 0
+  m_InScenePlaced: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1001 &1184610480
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3343,6 +3592,8 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
+  - {fileID: 265141159}
+  - {fileID: 818062914}
   - {fileID: 1091905507}
   - {fileID: 1851287309}
   - {fileID: 1514681326}

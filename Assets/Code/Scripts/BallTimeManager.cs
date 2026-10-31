@@ -1,13 +1,15 @@
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
 /// Contains properties and defines behavior involving time measurement of the ball object.
 /// </summary>
-public class BallTimeManager : MonoBehaviour
+public class BallTimeManager : NetworkBehaviour
 {
-    // The amount of time that has passed during this ball's turn.
-    // Not realtime, affected by multipliers.
-    public float TimeSpentInPlay {get; private set;}
+    // The amount of time that has passed during this ball's turn. Not realtime, affected by multipliers.
+    // All clients need access to each ball's time spent to display it accurately on their UI, but only
+    // the owner needs write access to prevent inteference/conflicting changes.
+    public NetworkVariable<float> TimeSpentInPlay = new NetworkVariable<float>(0, writePerm: NetworkVariableWritePermission.Owner);
 
     // When this is true, time-taken-modifying calculations will be performed each frame.
     bool _measureTime = false;
@@ -70,11 +72,14 @@ public class BallTimeManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Called when the component is first added.
+    /// This function is called when the NetworkObject has been spawned and its NetworkBehaviors have been initialized.
     /// Assigns the relevant callback functions to the relevant events on the BallMovement component.
     /// </summary>
-    void Awake()
+    protected override void OnNetworkPostSpawn()
     {
+        // In case the parent function does something useful, as it is an override.
+        base.OnNetworkPostSpawn();
+
         // Subscribes the relevant functions in this component to the ball's events.
         BallMovement ballMovementComponent = GetComponent<BallMovement>();
         ballMovementComponent.BallTurnBegan += StartMeasuringTime;
@@ -84,21 +89,13 @@ public class BallTimeManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Start is called once before the first execution of Update after the MonoBehaviour is created.
-    /// Initializes the time spent in play to 0.
-    /// </summary>
-    void Start()
-    {
-        TimeSpentInPlay = 0;
-    }
-
-    /// <summary>
     /// Update is called once per frame.
     /// Determines the new total of time spent since the last frame, post-modifier.
     /// </summary>
     void Update()
     {
-        if (_measureTime)
-            TimeSpentInPlay += Time.deltaTime * _timeRateModifier;
+        // Only the NetworkObject's owner should be able to change to time spent value, as it has the most accurate information.
+        if (_measureTime && IsOwner)
+            TimeSpentInPlay.Value += Time.deltaTime * _timeRateModifier;
     }
 }

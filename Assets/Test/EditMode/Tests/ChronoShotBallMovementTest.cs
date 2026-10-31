@@ -37,7 +37,7 @@ public class ChronoShotBallMovementTest
     {
         _ballRigidbody.linearVelocity = new Vector2(5f, 2f);
         _ballMovement.CurrentMotionState = BallMovement.MotionState.Moving;
-        _gameMaster.SetTimeRate(0.2f);
+        _gameMaster.SetTimeRateRPC(0.2f);
         Assert.AreEqual(0.2f, Time.timeScale);
         Assert.AreNotEqual(Vector2.zero, _ballRigidbody.linearVelocity);
         Assert.AreEqual(BallMovement.MotionState.Moving, _ballMovement.CurrentMotionState);
@@ -50,7 +50,7 @@ public class ChronoShotBallMovementTest
     public void BallRemainsAirborneDuringChronoShot()
     {
         _ballMovement.CurrentGroundState = BallMovement.GroundState.Airborne;
-        _gameMaster.SetTimeRate(0.2f);
+        _gameMaster.SetTimeRateRPC(0.2f);
         Assert.AreEqual(0.2f, Time.timeScale);
         Assert.AreEqual(BallMovement.GroundState.Airborne, _ballMovement.CurrentGroundState);
     }
@@ -63,7 +63,7 @@ public class ChronoShotBallMovementTest
     {
         _ballRigidbody.linearVelocity = new Vector2(5f, 2f);
         _ballMovement.CurrentMotionState = BallMovement.MotionState.Moving;
-        _gameMaster.SetTimeRate(0.2f);
+        _gameMaster.SetTimeRateRPC(0.2f);
         _gameMaster.ResetChronoShot();
         Assert.AreEqual(1.0f, Time.timeScale);
         Assert.AreNotEqual(Vector2.zero, _ballRigidbody.linearVelocity);
@@ -79,7 +79,7 @@ public class ChronoShotBallMovementTest
         _ballRigidbody.linearVelocity = new Vector2(5f, 2f);
         _ballMovement.CurrentMotionState = BallMovement.MotionState.Moving;
         _ballMovement.CurrentGroundState = BallMovement.GroundState.Airborne;
-        _gameMaster.SetTimeRate(0.2f);
+        _gameMaster.SetTimeRateRPC(0.2f);
         Assert.AreEqual(BallMovement.MotionState.Moving, _ballMovement.CurrentMotionState);
         Assert.AreEqual(BallMovement.GroundState.Airborne, _ballMovement.CurrentGroundState);
         _gameMaster.ResetChronoShot();

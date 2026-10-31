@@ -1,13 +1,13 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
-
 
 /// <summary>
 /// This will handle the friction forces that is applied to the ball while
 /// it is in contact with objects on the configured friction layers
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
-public class BallFriction : MonoBehaviour
+public class BallFriction : NetworkBehaviour
 {
     // Only objects in these layers will apply friction to the ball
     [Tooltip("Only objects in these layers will apply friction to the ball."), Header("Friction")]
@@ -24,12 +24,15 @@ public class BallFriction : MonoBehaviour
     int _framesToIgnoreFrictionOnLaunch = 3;
 
     /// <summary>
-    /// This is called when the object is instantiaed, before Start() and Update()
-    /// It will also store the ball's Rigidbody2D component so it can be used when calculating
-    /// and applying friction
+    /// This function is called when the NetworkObject has been spawned and all attached NetworkBehaviors have been initialized.
+    /// It stores the ball's Rigidbody2D component so it can be used when calculating and applying friction.
     /// </summary>
-    void Awake()
+    protected override void OnNetworkPostSpawn()
     {
+        // In case the base class' call was essential, as it is an override.
+        base.OnNetworkPostSpawn();
+
+        // Stores a reference to the RigidBody2D component on this object.
         _ballRigidBody = GetComponent<Rigidbody2D>();
 
         // Subscribes to the event called when the ball stops being aimed to ignore friction

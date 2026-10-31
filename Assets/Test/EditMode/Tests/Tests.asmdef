@@ -2,7 +2,9 @@
     "name": "Tests",
     "rootNamespace": "",
     "references": [
-        "ChronoShot"
+        "ChronoShot",
+        "Unity.Netcode.Runtime",
+        "Unity.Collections"
     ],
     "includePlatforms": [
         "Editor"

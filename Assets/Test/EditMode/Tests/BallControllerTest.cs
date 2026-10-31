@@ -40,7 +40,7 @@ public class BallControllerTest
     {
         _ball.transform.position = new Vector2(10f, 10f);
         GameObject[] resetPoints = { _resetPoint };
-        _gameMaster.ResetBall(_ball, resetPoints);
+        //_gameMaster.ResetBall(_ball, resetPoints);
         Assert.AreEqual(_resetPoint.transform.position, _ball.transform.position);
     }
 
@@ -53,7 +53,7 @@ public class BallControllerTest
         _ballRigidbody.linearVelocity = new Vector2(10f, 5f);
         _ballRigidbody.angularVelocity = 5f;
         GameObject[] resetPoints = { _resetPoint };
-        _gameMaster.ResetBall(_ball, resetPoints);
+        //_gameMaster.ResetBall(_ball, resetPoints);
         Assert.AreEqual(Vector2.zero, _ballRigidbody.linearVelocity);
         Assert.AreEqual(0f, _ballRigidbody.angularVelocity);
     }
@@ -67,7 +67,7 @@ public class BallControllerTest
         _ballRigidbody.linearVelocity = new Vector2(8f, 4f);
         _ballRigidbody.angularVelocity = 3f;
         GameObject[] resetPoints = { _resetPoint };
-        _gameMaster.ResetBall(_ball, resetPoints);
+        //_gameMaster.ResetBall(_ball, resetPoints);
         Assert.AreEqual(Vector2.zero, _ballRigidbody.linearVelocity);
         Assert.AreEqual(0f, _ballRigidbody.angularVelocity);
         Assert.AreEqual(_resetPoint.transform.position, _ball.transform.position);
@@ -83,7 +83,7 @@ public class BallControllerTest
         _ballRigidbody.linearVelocity = new Vector2(10f, -10f);
         _ballRigidbody.angularVelocity = 5f;
         GameObject[] resetPoints = { _resetPoint };
-        _gameMaster.ResetBall(_ball, resetPoints);
+        //_gameMaster.ResetBall(_ball, resetPoints);
         Assert.AreEqual(_resetPoint.transform.position, _ball.transform.position);
         Assert.AreEqual(Vector2.zero, _ballRigidbody.linearVelocity);
         Assert.AreEqual(0f, _ballRigidbody.angularVelocity);

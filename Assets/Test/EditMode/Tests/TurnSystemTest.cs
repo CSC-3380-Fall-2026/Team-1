@@ -3,6 +3,7 @@ using System.Reflection;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 using UnityEngine;
+using Unity.Collections;
 
 /// <summary>
 /// Test the multiplayer turn system and verifies that player
@@ -35,11 +36,11 @@ public class TurnSystemTest
         _gameMaster = _gameMasterObject.AddComponent<GameMaster>();
 
         // Initializes Player 1
-        _player1 = ScriptableObject.CreateInstance<Player>();
+        _player1 = new Player();
         _player1.PlayerName = "Player 1";
 
         // Initializes Player 2
-        _player2 = ScriptableObject.CreateInstance<Player>();
+        _player2 = new Player();
         _player2.PlayerName = "Player 2";
 
         // Initializes both players owned balls assigns their player info
@@ -47,14 +48,14 @@ public class TurnSystemTest
         _ball1.AddComponent<Rigidbody2D>();
         _ballMovement1 = _ball1.AddComponent<BallMovement>();
         _ballState1 = _ball1.AddComponent<BallState>();
-        _ballState1.BallID = 0;
-        _ballState1.PlayerName = _player1.PlayerName;
+        _ballState1.BallID.Value = 0;
+        _ballState1.PlayerName.Value = _player1.PlayerName.ToString();
         _ball2 = new GameObject("Ball 2");
         _ball2.AddComponent<Rigidbody2D>();
         _ballMovement2 = _ball2.AddComponent<BallMovement>();
         _ballState2 = _ball2.AddComponent<BallState>();
-        _ballState2.BallID = 1;
-        _ballState2.PlayerName = _player2.PlayerName;
+        _ballState2.BallID.Value = 1;
+        _ballState2.PlayerName.Value = _player2.PlayerName.ToString();
 
         // Gets access to the GameMaster's private player and ball lists for testing
         FieldInfo playerField = typeof(GameMaster).GetField(
@@ -100,7 +101,7 @@ public class TurnSystemTest
     {
         Assert.IsTrue(_ballMovement1.enabled);
         Assert.IsFalse(_ballMovement2.enabled);
-        _gameMaster.NextTurn();
+        _gameMaster.NextTurnRPC();
         Assert.IsFalse(_ballMovement1.enabled);
         Assert.IsTrue(_ballMovement2.enabled);
     }
@@ -113,7 +114,7 @@ public class TurnSystemTest
     {
         _ballMovement1.CurrentMotionState = BallMovement.MotionState.Stationary;
         _ballMovement1.CurrentGroundState = BallMovement.GroundState.Grounded;
-        _gameMaster.NextTurn();
+        _gameMaster.NextTurnRPC();
         Assert.IsFalse(_ballMovement1.enabled);
         Assert.IsTrue(_ballMovement2.enabled);
     }
@@ -125,10 +126,10 @@ public class TurnSystemTest
     [Test]
     public void TurnCyclebackToFirstPlayer()
     {
-        _gameMaster.NextTurn();
+        _gameMaster.NextTurnRPC();
         Assert.IsFalse(_ballMovement1.enabled);
         Assert.IsTrue(_ballMovement2.enabled);
-        _gameMaster.NextTurn();
+        _gameMaster.NextTurnRPC();
         Assert.IsTrue(_ballMovement1.enabled);
         Assert.IsFalse(_ballMovement2.enabled);
     }
@@ -140,7 +141,7 @@ public class TurnSystemTest
     public void PlayerAtGoalIsSkipped()
     {
         _ball2.SetActive(false);
-        _gameMaster.NextTurn();
+        _gameMaster.NextTurnRPC();
         Assert.IsTrue(_ballMovement1.enabled);
         Assert.IsFalse(_ball2.activeSelf);
     }
@@ -152,7 +153,7 @@ public class TurnSystemTest
     public void TurnProgressionContinuesWhenPlayerIsSkipped()
     {
         _ball2.SetActive(false);
-        _gameMaster.NextTurn();
+        _gameMaster.NextTurnRPC();
         Assert.IsTrue(_ball1.activeSelf);
         Assert.IsTrue(_ballMovement1.enabled);
         Assert.IsFalse(_ball2.activeSelf);
@@ -172,7 +173,7 @@ public class TurnSystemTest
             "No balls are active.\nIf not all have reached goal, something is wrong."
         );
 
-        _gameMaster.NextTurn();
+        _gameMaster.NextTurnRPC();
     }
     
 }
