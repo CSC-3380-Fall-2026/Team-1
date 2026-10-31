@@ -11,6 +11,10 @@ public class BeginnerCourseTimerTest
     BallMovement _ballMovement;
     BallTimeManager _ballTimeManager;
 
+    /// <summary>
+    /// Creates a temporary ball with the components needed to test the course timer
+    /// before each test runs
+    /// </summary>
     [SetUp]
     public void SetUp()
     {
@@ -26,9 +30,21 @@ public class BeginnerCourseTimerTest
     [Test]
     public void TimerStartWhenGameplayBegins()
     {
+        /*
+        Reflection is used here to access the private StartMeasuringTime method in
+        BallTimeManager. The method is private because it is only used internally by
+        BallTimeManager, but the test needs to call it directly to verify that the timer 
+        begins measuring time correctly
+        */
+
         MethodInfo startMeasuringTime = typeof(BallTimeManager).GetMethod(
             "StartMeasuringTime", BindingFlags.NonPublic | BindingFlags.Instance
         );
+
+        /*
+        Reflection is also used to inspect the private _measureTime field so the test
+        can verify that the time measurement was enabled
+        */
 
         startMeasuringTime.Invoke(_ballTimeManager, null);
         FieldInfo measureTimeField = typeof(BallTimeManager).GetField(
@@ -47,8 +63,20 @@ public class BeginnerCourseTimerTest
     public void TimerContinuesBetweenHoles()
     {
         _ballMovement.BallTurnBegan?.Invoke();
+
+        /*
+        Reflection sets the private timer value to simulate time already accumulated
+        during the course
+        */
+        
         typeof(BallTimeManager)
-            .GetField("<TimeSpentInPlay>k__BackingField", 
+            .GetField("<TimeSpentInPlay>k__BackingField",
+
+            /* 
+            Reflection sets an accumulated timer value so the test can verify that completing
+            a hole does not reset it
+            */
+
                 BindingFlags.NonPublic | BindingFlags.Instance)
             .SetValue(_ballTimeManager, 5f);
         _ballMovement.BallTurnEnded?.Invoke();
@@ -77,6 +105,11 @@ public class BeginnerCourseTimerTest
     [Test]
     public void TimerStopsWhenFinalHoleIsCompleted()
     {
+        /*
+        Reflection accesses the private timer methods so the test can simulate starting and 
+        stopping time measurement
+        */
+
         MethodInfo startMeasuringTime = typeof(BallTimeManager).GetMethod(
             "StartMeasuringTime", BindingFlags.NonPublic | BindingFlags.Instance
         );
@@ -85,6 +118,10 @@ public class BeginnerCourseTimerTest
             "StopMeasuringTime", BindingFlags.NonPublic | BindingFlags.Instance
         );
 
+        /* Reflection checks the private timer state to verify that measuring time starts
+        and stops correctly
+        */
+        
         FieldInfo measureTimeField = typeof(BallTimeManager).GetField(
             "_measureTime", BindingFlags.NonPublic | BindingFlags.Instance
         );
