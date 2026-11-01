@@ -40,6 +40,7 @@ public class GameMaster : NetworkBehaviour
     // The balls in the current map. Ball index should match player index.
     // Each client maintains a local copy of this list, as entire GameObjects are too large to synchronize.
     List<GameObject> _balls = new List<GameObject>();
+    public IReadOnlyList<GameObject> Balls => _balls;
 
     // A list of objects whose owner should be the client of the player whose turn it is.
     List<NetworkObject> _objectsToGiveToOwner = new List<NetworkObject>();
