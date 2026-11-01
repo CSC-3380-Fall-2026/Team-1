@@ -70,25 +70,18 @@ public class BallCamera : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Sets the initial camrea target when the gameplay begins
-    /// </summary>
-    void Start()
-    {
-        NetworkManager.Singleton.OnClientConnectedCallback += HandleClientConnected;
-    }
+    bool _subscribedToTurnChanges = false;
 
-    /// <summary>
-    /// Sets uo the camera after the local client connects to the server
-    /// </summary>
-    /// <param name="clientID"> The ID of the client that is connected to the server </param>
-    void HandleClientConnected(ulong clientID)
+    void Update()
     {
-        if (clientID == NetworkManager.Singleton.LocalClientId)
+        if (!_subscribedToTurnChanges &&
+            NetworkManager.Singleton != null &&
+            NetworkManager.Singleton.IsListening)
         {
             GameMaster.Instance.CurrentPlayerTurn.OnValueChanged += HandleTurnChanged;
+            _subscribedToTurnChanges = true;
 
-            // Sets the camera target for the first turn
+            _targetBall = null;
             UpdateCameraTarget();
         }
     }
@@ -98,13 +91,20 @@ public class BallCamera : MonoBehaviour
     /// </summary>
     void LateUpdate()
     {
-        if (_targetBall == null)
+        int activeBallID = GameMaster.Instance.CurrentPlayerTurn.Value;
+
+        // Updates the target if there is no target or the camera is following
+        // a ball that no longer belongs to the active player.
+        if (_targetBall == null ||
+            activeBallID >= GameMaster.Instance.Balls.Count ||
+            GameMaster.Instance.Balls[activeBallID] == null ||
+            _targetBall != GameMaster.Instance.Balls[activeBallID].transform)
         {
             UpdateCameraTarget();
-            if (_targetBall == null)
-                return;
         }
 
+        if (_targetBall == null)
+            return;
 
         Vector3 targetPosition = new Vector3(
             _targetBall.position.x, transform.position.y, transform.position.z
@@ -122,6 +122,7 @@ public class BallCamera : MonoBehaviour
     /// <param name="newTurn"> The ID of the player whose turn is beginning. </param>
     void HandleTurnChanged(int previousTurn, int newTurn)
     {
+        _targetBall = null;
         UpdateCameraTarget();
     }
 
@@ -130,12 +131,7 @@ public class BallCamera : MonoBehaviour
     /// </summary>
     void OnDestroy()
     {
-        if (NetworkManager.Singleton != null)
-        {
-            NetworkManager.Singleton.OnClientConnectedCallback -= HandleClientConnected;
-        }
-
-        if (GameMaster.Instance != null)
+        if (_subscribedToTurnChanges && GameMaster.Instance != null)
         {
             GameMaster.Instance.CurrentPlayerTurn.OnValueChanged -= HandleTurnChanged;
         }
