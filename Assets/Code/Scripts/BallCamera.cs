@@ -2,7 +2,7 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// This will control the gameplay camrea and follows the ball belonging to
+/// This will control the gameplay camera and follows the ball belonging to
 /// the player whose turn is currently active
 /// </summary>
 public class BallCamera : MonoBehaviour
@@ -10,8 +10,8 @@ public class BallCamera : MonoBehaviour
     // The ball that the camera is currently following
     Transform _targetBall;
 
-    // Controls how smoothly the camrea moves towards the active ball
-    [SerializeField, Tooltip("The amount of time used to smoothly move the camrea towards the active ball.")]
+    // Controls how smoothly the camera moves towards the active ball
+    [SerializeField, Tooltip("The amount of time used to smoothly move the camera towards the active ball.")]
     float _smoothTime = 0.3f;
 
     // Stores the current velocity used to SmoothDamp
@@ -19,7 +19,7 @@ public class BallCamera : MonoBehaviour
 
     /// <summary>
     /// This will find the ball belonging to the player whose turn is currently 
-    /// active and makes it the camrea's target
+    /// active and makes it the camera's target
     /// </summary>
     void UpdateCameraTarget()
     {
@@ -116,7 +116,7 @@ public class BallCamera : MonoBehaviour
     }
 
     /// <summary>
-    /// Updates the camrea target when the active player's turn changes
+    /// Updates the camera target when the active player's turn changes
     /// </summary>
     /// <param name="previousTurn"> The ID of the player whose turn just ended. </param>
     /// <param name="newTurn"> The ID of the player whose turn is beginning. </param>
