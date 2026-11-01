@@ -17,8 +17,6 @@ public class BallCamera : MonoBehaviour
     // Stores the current velocity used to SmoothDamp
     Vector3 _cameraVelocity = Vector3.zero;
 
-    bool _subscribedToTurnChanges = false;
-
     /// <summary>
     /// This will find the ball belonging to the player whose turn is currently 
     /// active and makes it the camera's target
@@ -98,8 +96,6 @@ public class BallCamera : MonoBehaviour
         if (clientID == NetworkManager.Singleton.LocalClientId)
         {
             GameMaster.Instance.CurrentPlayerTurn.OnValueChanged += HandleTurnChanged;
-            _subscribedToTurnChanges = true;
-
             _targetBall = null;
             UpdateCameraTarget();
         }
@@ -155,7 +151,7 @@ public class BallCamera : MonoBehaviour
             NetworkManager.Singleton.OnClientConnectedCallback -= HandleClientConnected;
         }
 
-        if (_subscribedToTurnChanges && GameMaster.Instance != null)
+        if (GameMaster.Instance != null)
         {
             GameMaster.Instance.CurrentPlayerTurn.OnValueChanged -= HandleTurnChanged;
         }
