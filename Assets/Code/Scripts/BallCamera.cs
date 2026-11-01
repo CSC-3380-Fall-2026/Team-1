@@ -122,7 +122,7 @@ public class BallCamera : MonoBehaviour
             return;
 
         Vector3 targetPosition = new Vector3(
-            _targetBall.position.x, transform.position.y, transform.position.z
+            _targetBall.position.x, _targetBall.position.y, transform.position.z
         );
 
         transform.position = Vector3.SmoothDamp(
