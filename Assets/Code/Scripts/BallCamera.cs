@@ -1,4 +1,5 @@
-using UnityEngine; 
+using Unity.Netcode;
+using UnityEngine;
 
 /// <summary>
 /// This will control the gameplay camrea and follows the ball belonging to
@@ -22,21 +23,28 @@ public class BallCamera : MonoBehaviour
     /// </summary>
     void UpdateCameraTarget()
     {
-        BallState[] balls = FindObjectsByType<BallState>(FindObjectsSortMode.None);
+        // Wait until all player balls have been added to the GameMaster.
+        if (GameMaster.Instance.Balls.Count == 0 ||
+            GameMaster.Instance.Balls.Count != GameMaster.Instance.Players.Count)
+        {
+            return;
+        }
 
         // Assume all players on this device have finished until an active local ball is found.
         bool allLocalPlayersFinished = true;
 
-        foreach (BallState ball in balls)
+        for (int i = 0; i < GameMaster.Instance.Balls.Count; i++)
         {
-            int ballID = ball.BallID.Value;
-
+            if (GameMaster.Instance.Balls[i] == null)
+            {
+                return;
+            }
             // Checks whether this ball belongs to a player on this device.
-            if (GameMaster.Instance.Players[ballID].PlayerClientID ==
-                Unity.Netcode.NetworkManager.Singleton.LocalClientId)
+            if (GameMaster.Instance.Players[i].PlayerClientID ==
+                NetworkManager.Singleton.LocalClientId)
             {
                 // If a local ball is still active, this device still has a player in the hole.
-                if (ball.gameObject.activeSelf)
+                if (GameMaster.Instance.Balls[i].activeSelf)
                 {
                     allLocalPlayersFinished = false;
                     break;
@@ -44,26 +52,21 @@ public class BallCamera : MonoBehaviour
             }
         }
 
-        foreach (BallState ball in balls)
+        int activeBallID = GameMaster.Instance.CurrentPlayerTurn.Value;
+
+        // Gets the active player's ball directly using its ID.
+        GameObject activeBall = GameMaster.Instance.Balls[activeBallID];
+
+        bool ballBelongsToLocalPlayer =
+            GameMaster.Instance.Players[activeBallID].PlayerClientID ==
+            NetworkManager.Singleton.LocalClientId;
+
+        /* Follow local players normally. If all local players have finished,
+           allow the camera to spectate the player whose turn is active.
+         */
+        if (ballBelongsToLocalPlayer || allLocalPlayersFinished)
         {
-            int ballID = ball.BallID.Value;
-
-            if (ballID == GameMaster.Instance.CurrentPlayerTurn.Value)
-            {
-                bool ballBelongsToLocalPlayer =
-                    GameMaster.Instance.Players[ballID].PlayerClientID ==
-                    Unity.Netcode.NetworkManager.Singleton.LocalClientId;
-
-                /*Follow local players normally. If all local players have finished,
-                 allow the camera to spectate the player whose turn is active.
-                 */
-                if (ballBelongsToLocalPlayer || allLocalPlayersFinished)
-                {
-                    _targetBall = ball.transform;
-                }
-
-                return;
-            }
+            _targetBall = activeBall.transform;
         }
     }
 
@@ -72,12 +75,26 @@ public class BallCamera : MonoBehaviour
     /// </summary>
     void Start()
     {
-        GameMaster.Instance.CurrentPlayerTurn.OnValueChanged += HandleTurnChanged;
-        UpdateCameraTarget();
+        NetworkManager.Singleton.OnClientConnectedCallback += HandleClientConnected;
     }
 
     /// <summary>
-    /// Smoothly moves the camrea toward the ball it is currently following
+    /// Sets uo the camera after the local client connects to the server
+    /// </summary>
+    /// <param name="clientID"> The ID of the client that is connected to the server </param>
+    void HandleClientConnected(ulong clientID)
+    {
+        if (clientID == NetworkManager.Singleton.LocalClientId)
+        {
+            GameMaster.Instance.CurrentPlayerTurn.OnValueChanged += HandleTurnChanged;
+
+            // Sets the camera target for the first turn
+            UpdateCameraTarget();
+        }
+    }
+
+    /// <summary>
+    /// Smoothly moves the camera toward the ball it is currently following
     /// </summary>
     void LateUpdate()
     {
@@ -88,7 +105,7 @@ public class BallCamera : MonoBehaviour
                 return;
         }
 
-        
+
         Vector3 targetPosition = new Vector3(
             _targetBall.position.x, transform.position.y, transform.position.z
         );
@@ -113,6 +130,11 @@ public class BallCamera : MonoBehaviour
     /// </summary>
     void OnDestroy()
     {
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback -= HandleClientConnected;
+        }
+
         if (GameMaster.Instance != null)
         {
             GameMaster.Instance.CurrentPlayerTurn.OnValueChanged -= HandleTurnChanged;

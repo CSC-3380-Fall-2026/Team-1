@@ -41,6 +41,7 @@ public class GameMaster : NetworkBehaviour
     // The balls in the current map. Ball index should match player index.
     // Each client maintains a local copy of this list, as entire GameObjects are too large to synchronize.
     List<GameObject> _balls = new List<GameObject>();
+    public IReadOnlyList<GameObject> Balls => _balls;
 
      // The ball object to be created at the beginning of the round.
     [SerializeField, Tooltip("The ball object to be created at the beginning of the round.")]
