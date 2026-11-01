@@ -17,12 +17,19 @@ public class BallCamera : MonoBehaviour
     // Stores the current velocity used to SmoothDamp
     Vector3 _cameraVelocity = Vector3.zero;
 
+    bool _subscribedToTurnChanges = false;
+
     /// <summary>
     /// This will find the ball belonging to the player whose turn is currently 
     /// active and makes it the camera's target
     /// </summary>
     void UpdateCameraTarget()
     {
+        if (GameMaster.Instance == null)
+        {
+            return;
+        } 
+
         // Wait until all player balls have been added to the GameMaster.
         if (GameMaster.Instance.Balls.Count == 0 ||
             GameMaster.Instance.Balls.Count != GameMaster.Instance.Players.Count)
@@ -36,6 +43,10 @@ public class BallCamera : MonoBehaviour
         for (int i = 0; i < GameMaster.Instance.Balls.Count; i++)
         {
             if (GameMaster.Instance.Balls[i] == null)
+            {
+                return;
+            }
+            if (i >= GameMaster.Instance.Players.Count)
             {
                 return;
             }
@@ -70,13 +81,21 @@ public class BallCamera : MonoBehaviour
         }
     }
 
-    bool _subscribedToTurnChanges = false;
-
-    void Update()
+    /// <summary>
+    /// Subscribes to the client connection event when the camera begins.
+    /// </summary>
+    void Start()
     {
-        if (!_subscribedToTurnChanges &&
-            NetworkManager.Singleton != null &&
-            NetworkManager.Singleton.IsListening)
+        NetworkManager.Singleton.OnClientConnectedCallback += HandleClientConnected;
+    }
+
+    /// <summary>
+    /// Subscribes to turn changes after the local client connects to the server.
+    /// </summary>
+    /// <param name="clientID">The ID of the client that connected to the server.</param>
+    void HandleClientConnected(ulong clientID)
+    {
+        if (clientID == NetworkManager.Singleton.LocalClientId)
         {
             GameMaster.Instance.CurrentPlayerTurn.OnValueChanged += HandleTurnChanged;
             _subscribedToTurnChanges = true;
@@ -131,6 +150,11 @@ public class BallCamera : MonoBehaviour
     /// </summary>
     void OnDestroy()
     {
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback -= HandleClientConnected;
+        }
+
         if (_subscribedToTurnChanges && GameMaster.Instance != null)
         {
             GameMaster.Instance.CurrentPlayerTurn.OnValueChanged -= HandleTurnChanged;
