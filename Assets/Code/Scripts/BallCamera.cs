@@ -7,7 +7,7 @@ using UnityEngine;
 /// </summary>
 public class BallCamera : MonoBehaviour
 {
-    // The ball that the camrea is currently following
+    // The ball that the camera is currently following
     Transform _targetBall;
 
     // Controls how smoothly the camrea moves towards the active ball
