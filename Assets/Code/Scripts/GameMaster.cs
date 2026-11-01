@@ -41,6 +41,9 @@ public class GameMaster : NetworkBehaviour
     // Each client maintains a local copy of this list, as entire GameObjects are too large to synchronize.
     List<GameObject> _balls = new List<GameObject>();
 
+    // A list of objects whose owner should be the client of the player whose turn it is.
+    List<NetworkObject> _objectsToGiveToOwner = new List<NetworkObject>();
+
      // The ball object to be created at the beginning of the round.
     [SerializeField, Tooltip("The ball object to be created at the beginning of the round.")]
     GameObject _ballPrefab;
@@ -326,6 +329,9 @@ public class GameMaster : NetworkBehaviour
             }
         }
 
+        // Gives ownership of all relevant network objects to the player's client.
+        ChangeOwnersipOfOwnerRelevantObjects(Players[nextTurnIndexTemporary].PlayerClientID);
+
         // Actually changes the player turn value, triggering functions subscribed to the value's change event.
         CurrentPlayerTurn.Value = nextTurnIndexTemporary;
     }
@@ -433,6 +439,32 @@ public class GameMaster : NetworkBehaviour
     }
 
     /// <summary>
+    /// Adds every object whose owner should be changed to the client of the player whose turn it is to the list.
+    /// </summary>
+    void PopulateListWithObjectsToSwitchOwner()
+    {
+        // Adds every moving platform to the list.
+        MovingPlatform[] movingPlatforms = FindObjectsByType<MovingPlatform>(FindObjectsSortMode.None);
+        foreach (MovingPlatform movingPlatform in movingPlatforms)
+            _objectsToGiveToOwner.Add(movingPlatform.NetworkObject);
+    }
+
+    /// <summary>
+    /// Changes the ownership of every object that the client should own to a specified client.
+    /// </summary>
+    /// <param name="newOwnerClientID">The network ID of the client who should gain ownership of the network objects.</param>
+    void ChangeOwnersipOfOwnerRelevantObjects(ulong newOwnerClientID)
+    {
+        // Only the host or server should have authority to do so.
+        if (!IsHost || !IsServer)
+            return;
+
+        // Makes the client the new owner of all the objects sequentially.
+        foreach (NetworkObject networkObject in _objectsToGiveToOwner)
+            networkObject.ChangeOwnership(newOwnerClientID);
+    }
+
+    /// <summary>
     /// This function is called when the game object is instantiated, before Start() or any Update functions.
     /// Sets this instance as the singleton if there isn't one already, destroys this instance if there is.
     /// </summary>
@@ -446,5 +478,15 @@ public class GameMaster : NetworkBehaviour
             Destroy(this);
         else
             Instance = this;
+    }
+
+    /// <summary>
+    /// Called when every object has been initialized (non-network).
+    /// Adds relevant network objects to the list of those whose ownership will be changed to the client
+    /// of the player whose turn it is.
+    /// </summary>
+    void Start()
+    {
+        PopulateListWithObjectsToSwitchOwner();
     }
 }
