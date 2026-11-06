@@ -1,0 +1,7 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="CardRootVisualElement" style="flex-grow: 1; color: rgb(255, 255, 255); background-color: rgb(255, 255, 255); flex-direction: row; min-width: 100%; max-width: 100%; min-height: 75px; max-height: 75px; align-items: stretch; justify-content: space-around;">
+        <ui:Label text="Player Name" name="PlayerNameLabel" style="min-width: 50%; max-width: 50%; min-height: auto; max-height: none; color: rgb(26, 26, 26); background-color: rgb(255, 255, 255); justify-content: flex-start; align-items: stretch; align-self: auto; align-content: auto; -unity-text-align: middle-left;"/>
+        <ui:Label text="Local/Remote" name="LocalOrRemoteLabel" style="min-width: 25%; max-width: 25%; -unity-text-align: middle-left; color: rgb(0, 0, 0);"/>
+        <ui:Button text="Kick&#10;" name="KickPlayerButton" style="align-self: auto; min-width: 25%; max-width: 25%;"/>
+    </ui:VisualElement>
+</ui:UXML>

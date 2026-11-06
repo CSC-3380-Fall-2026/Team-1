@@ -1,0 +1,18 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="LobbyRootVisualElement" style="flex-grow: 1; background-color: rgb(166, 166, 166);">
+        <ui:Label text="Lobby" name="LobbyTitleLabel" style="position: absolute; flex-grow: 1; flex-shrink: 1; align-self: center; width: 100%; height: auto; font-size: 40px; -unity-text-align: middle-center;"/>
+        <ui:ScrollView name="ConnectionsListScrollView" style="min-width: 30%; align-self: center; min-height: 50%; position: absolute; top: 25%; right: 65%; max-width: 30%; background-color: rgba(51, 51, 51, 0.784);"/>
+        <ui:ScrollView name="PlayerListScrollView" horizontal-scroller-visibility="Hidden" style="min-width: 55%; min-height: 50%; max-width: 55%; max-height: 50px; align-self: center; top: 25%; position: absolute; left: 40%; right: 0; bottom: 0; align-items: stretch; transform-origin: center; background-color: rgba(51, 51, 51, 0.784);"/>
+        <ui:VisualElement name="StartExitContainer" style="flex-grow: 1; top: 80%; min-width: 55%; max-width: 55%; max-height: 15%; min-height: 15%; align-self: center; bottom: auto; flex-direction: row; align-content: auto; justify-content: space-evenly; left: 40%; position: absolute;">
+            <ui:Button text="Start Game&#10;" name="StartGameButton" style="min-width: 30%; max-width: 30%;"/>
+            <ui:Button text="Exit Game" name="ExitGameButton" style="min-width: 30%; max-width: 30%;"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="AddPlayerProfileContainer" style="flex-grow: 1; align-self: center; min-width: 30%; max-width: 30%; right: 65%; position: absolute; min-height: 15%; max-height: 15%; top: 80%; flex-direction: row; justify-content: space-around;">
+            <ui:DropdownField label="" name="AddPlayerProfileDropdown" style="min-width: 65%; max-width: 65%;"/>
+            <ui:Button text="Add&#10;Player" name="AddPlayerProfileButton" style="min-width: 25%; max-width: 25%; white-space: nowrap; text-overflow: clip;"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="DisconnectContainer" style="flex-grow: 1; top: 80%; min-width: 55%; max-width: 55%; max-height: 15%; min-height: 15%; align-self: center; bottom: auto; flex-direction: row; align-content: auto; justify-content: space-evenly; left: 40%; position: absolute; visibility: hidden;">
+            <ui:Button text="Disconnect" name="DisconnectButton" style="min-width: 30%; max-width: 30%;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
