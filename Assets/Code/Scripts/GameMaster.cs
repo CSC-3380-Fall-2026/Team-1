@@ -17,6 +17,14 @@ public class GameMaster : NetworkBehaviour
         private set;
     }
 
+    public enum GameState
+    {
+        Lobby,
+        Game
+    }
+
+    public GameState CurrentGameState {get; private set;}
+
     // For testing purposes, the current course being played.
     [SerializeField]
     Course _currentCourse;
@@ -233,7 +241,7 @@ public class GameMaster : NetworkBehaviour
                 // Its ID should be the position of the owning player on the players list.
                 BallState playerBallState = playerBall.GetComponent<BallState>();
                 playerBallState.BallID.Value = i;
-                playerBallState.PlayerName.Value = player.PlayerName.ToString();
+                playerBallState.PlayerName.Value = player.PlayerName;
 
                 // Gets a reference to the new ball's NetworkObject component and spawns it on each client.
                 NetworkObject ballNetworkObjectComponent = playerBall.GetComponent<NetworkObject>();
@@ -408,13 +416,14 @@ public class GameMaster : NetworkBehaviour
     /// <param name="playerName">The name of the newly added player.</param>
     /// <param name="playerClientID">The NetworkClientID that owns the newly added player.</param>
     /// <param name="playerGUID">The GUID of the newly added player. Used to determine if reconnecting.</param>
-    public void AddPlayer(string playerName, ulong playerClientID, string playerGUID)
+    [Rpc(SendTo.Server)]
+    public void AddPlayerRPC(string playerName, ulong playerClientID, string playerGUID)
     {
         // Updates the player's ClientID if the player was already in the list based on GUID.
         for(int i = 0; i < Players.Count; i++)
         {
             // GUID will be determined and stored when launching the game (probably PlayerPrefs).
-            if (Players[i].PlayerGUID == playerGUID)
+            if (Players[i].PlayerGUID == playerGUID && Players[i].PlayerClientID != playerClientID)
             {
                 // Players in the NetworkList cannot be edited directly, so makes a clone with the new ID change
                 // then sets the player to the new clone.
@@ -422,8 +431,7 @@ public class GameMaster : NetworkBehaviour
                 playerThatExists.PlayerClientID = playerClientID;
                 Players[i] = playerThatExists;
 
-                Debug.Log("Player already exists. Updated client ID");
-                return;
+                Debug.Log("Player with same GUID but different Client ID exists. Updated client ID");
             }
         }
 
@@ -442,17 +450,25 @@ public class GameMaster : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     public void RemovePlayerRPC(int playerPositionInPlayersList)
     {
-        if (playerPositionInPlayersList <= Players.Count)
+        if (playerPositionInPlayersList >= Players.Count)
         {
-            Debug.Log("Index of player intended to be removed is outside the range of players.");
+            Debug.Log($"Index of player ({playerPositionInPlayersList}) intended to be removed is outside the range of players.");
             return;
         }
 
-        if (IsHost || Players[playerPositionInPlayersList].PlayerClientID == NetworkManager.LocalClientId)
+        if (IsHost)
             Players.RemoveAt(playerPositionInPlayersList);
 
         if (_balls.Count > playerPositionInPlayersList)
-        _balls.RemoveAt(playerPositionInPlayersList);
+            _balls.RemoveAt(playerPositionInPlayersList);
+    }
+
+    public void StartCourse()
+    {
+        NetworkManager.SceneManager.LoadScene(_currentCourse.Holes[0].Map.name, LoadSceneMode.Single);
+        CurrentGameState = GameState.Game;
+        PopulateListWithObjectsToSwitchOwner();
+        SpawnBallsRPC();
     }
 
     /// <summary>
@@ -493,8 +509,10 @@ public class GameMaster : NetworkBehaviour
         // Ensures that there will only be one instance of the GameMaster at any time.
         if (Instance != null && Instance != this)
             Destroy(this);
-        else
+        else {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
     }
 
     /// <summary>

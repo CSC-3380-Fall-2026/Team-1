@@ -13,6 +13,7 @@ using Unity.Collections;
 /// object differs from its previous state.
 /// Will contain the player's customization choices.
 /// </remarks>
+[Serializable]
 public struct Player : INetworkSerializable, IEquatable<Player>
 {
     // The player's name.
