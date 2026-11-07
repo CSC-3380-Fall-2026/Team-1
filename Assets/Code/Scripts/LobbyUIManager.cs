@@ -286,4 +286,14 @@ public class LobbyUIManager : MonoBehaviour
     {
         ConstructPlayersListUI();
     }
+
+    /// <summary>
+    /// Called when the GameObject is destroyed.
+    /// Unsubscribes from relevant events.
+    /// </summary>
+    void OnDestroy()
+    {
+        NetworkManager.Singleton.OnConnectionEvent -= HandleConnectionEvent;
+        GameMaster.Instance.Players.OnListChanged -= HandlePlayerListChangedEvent;
+    }
 }

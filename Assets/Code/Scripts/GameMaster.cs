@@ -60,15 +60,6 @@ public class GameMaster : NetworkBehaviour
     [SerializeField, Tooltip("The ball object to be created at the beginning of the round.")]
     GameObject _ballPrefab;
 
-    // A list of all reset points whose locations will be used as reset points.
-    // Anything that handles resets will choose a subset of these objects (via index) to determine potential locations.
-    [SerializeField, Tooltip("A list of potential reset points, including spawn points."), Header("Ball Reset")]
-    GameObject[] _resetLocationObjects;
-
-    // A list containing the indices of reset location objects in the general list that are used as spawn points.
-    [SerializeField, Tooltip("The indices of the reset location objects denoting spawn points.")]
-    int[] _spawnPointIDs;
-
     // Objects in these layers will be considered to be obstructing the reset point.
     [Tooltip("Objects in these layers will be considered to be obstructing the reset point.")]
     public LayerMask ResetObstructionLayers;
@@ -108,7 +99,7 @@ public class GameMaster : NetworkBehaviour
         // To account for situations where multiple balls are reset in the same physics update (and thus cannot check for obstruction),
         // can manually skip a number of indices (if it is known a ball will be there).
         for (int i = startFromIndex; i < resetLocationObjectsIndices.Length; i++)
-            consideredResetLocationObjects.Add(_resetLocationObjects[resetLocationObjectsIndices[i]]);
+            consideredResetLocationObjects.Add(HoleData.Instance.ResetLocationObjects[resetLocationObjectsIndices[i]]);
 
         // Checks if each reset location is unobstructed.
         foreach (GameObject resetLocationObject in consideredResetLocationObjects)
@@ -253,7 +244,7 @@ public class GameMaster : NetworkBehaviour
                 // Moves the new ball to an unobstructed spawnpoint by the reset function.
                 // Every ball will be spawned before the next physics update, so reset cannot check for obstruction.
                 // To get around this, spawnpoints obstructed by balls just spawned are manually ignored.
-                ResetBallRPC(i, _spawnPointIDs, true, i);
+                ResetBallRPC(i, HoleData.Instance.SpawnPointIndices, true, i);
 
                 // Every ball should be owned by the player whose turn it is, so that their physics simulation is accurate.
                 ballNetworkObjectComponent.ChangeOwnership(Players[CurrentPlayerTurn.Value].PlayerClientID);
@@ -267,8 +258,25 @@ public class GameMaster : NetworkBehaviour
     /// <param name="ballGameObject">The ball GameObject to be added.</param>
     public void AddPlayerBall(GameObject ballGameObject)
     {
+        // Prevents the ball from being added if a ball with the same ID exists in the list already.
+        // OnPostNetworkSpawn is called on every client for every ball added to any of them (exponential)
+        // so balls would be added multiple times otherwise.
+        BallState addedBallStateComponent = ballGameObject.GetComponent<BallState>();
+        foreach (GameObject ball in _balls)
+        {
+            BallState ballStateComponent = ball.GetComponent<BallState>();
+
+            if (addedBallStateComponent.BallID.Value == ballStateComponent.BallID.Value)
+            {
+                Debug.Log("Ball exists in the balls list of this client already.");
+                return;
+            }
+        }
+
         // Adds the ball to the list in the last position. Likely out of order.
         _balls.Add(ballGameObject);
+
+        Debug.Log($"Balls count: {_balls.Count}");
 
         // A list that will store the balls newly reordered according to their IDs.
         List<GameObject> temporaryListForReorganization = new List<GameObject>(_balls.Count);
@@ -379,7 +387,6 @@ public class GameMaster : NetworkBehaviour
     /// Gets relevant information to update its score and disables it.
     /// </summary>
     /// <param name="ballThatEnteredHoleID">The ID of the ball gameObject in the balls list which just entered the hole.</param>
-    [Rpc(SendTo.ClientsAndHost)]
     public void HandleGoalRPC(int ballThatEnteredHoleID)
     {
         // Only the host needs to calculate the score and update the value for all the clients.
@@ -511,9 +518,6 @@ public class GameMaster : NetworkBehaviour
 
         // Non-ball network objects need to be identified so they can change ownership as player turns change.
         PopulateListWithObjectsToSwitchOwner();
-
-        // Spawns the balls and changes ownership of relevant network objects to the client of the player whose turn it is.
-        SpawnBallsRPC();
     }
 
     /// <summary>

@@ -21,6 +21,9 @@ public class GameUIManager : MonoBehaviour
     /// </summary>
     void Awake()
     {
+        // The GameUI manager should be manually destroyed when the course is completed.
+        DontDestroyOnLoad(gameObject);
+
         // Gets a reference to the UIDocument component used for displaying UXML files.
         _UIDocumentComponent = GetComponent<UIDocument>();
 
@@ -35,7 +38,7 @@ public class GameUIManager : MonoBehaviour
 
         // Subscribes the players list construction function to occur when the players list changes or on new turn.
         GameMaster.Instance.Players.OnListChanged += ConstructPlayerList;
-        GameMaster.Instance.CurrentPlayerTurn.OnValueChanged += (oldTurn, newTurn) => {ConstructPlayerList();};
+        GameMaster.Instance.CurrentPlayerTurn.OnValueChanged += HandlePlayerTurnValueChanged;
     }
 
     /// <summary>
@@ -45,7 +48,7 @@ public class GameUIManager : MonoBehaviour
     void ConstructPlayerList(NetworkListEvent<Player> playerListChangeInfo = default(NetworkListEvent<Player>))
     {
         // Gets a reference to the list view UI element containing the list of players.
-        ListView connectedPlayersListView = _UIDocumentComponent.rootVisualElement.Query<ListView>("ConnectedPlayersListView");
+        ListView PlayersListView = _UIDocumentComponent.rootVisualElement.Query<ListView>("PlayersListView");
 
         // Initializes a new list of strings to hold the players' information.
         List<string> playerInfoList = new List<string>(GameMaster.Instance.Players.Count);
@@ -69,9 +72,30 @@ public class GameUIManager : MonoBehaviour
         }
 
         // Tells the ListView to use the created list of player information strings as a source for its elements.
-        connectedPlayersListView.itemsSource = playerInfoList;
+        PlayersListView.itemsSource = playerInfoList;
 
         // Tells the ListView to recreate its elements with the newly given source.
-        connectedPlayersListView.Rebuild();
+        PlayersListView.Rebuild();
+    }
+
+    /// <summary>
+    /// Handles the event raised when the player turn value changes.
+    /// Currently just reconstructs the player list in the UI.
+    /// </summary>
+    /// <param name="previousTurnValue">The index of the player whose turn it was.</param>
+    /// <param name="newTurnValue">The index of the player whose turn it now is.</param>
+    void HandlePlayerTurnValueChanged(int previousTurnValue, int newTurnValue)
+    {
+        ConstructPlayerList();
+    }
+
+    /// <summary>
+    /// This function is called when the gameObject this component is attached to is about to be destroyed.
+    /// Unsubscribes from relevant events.
+    /// </summary>
+    void OnDestroy()
+    {
+        GameMaster.Instance.Players.OnListChanged -= ConstructPlayerList;
+        GameMaster.Instance.CurrentPlayerTurn.OnValueChanged -= HandlePlayerTurnValueChanged;
     }
 }
