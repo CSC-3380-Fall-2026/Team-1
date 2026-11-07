@@ -14,4 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChronoShot::Course
   Holes:
   - {fileID: 11400000, guid: e9b4376227e8dc24a91387430f188ca1, type: 2}
+  - {fileID: 11400000, guid: 96596c12fae688249819591932c448ba, type: 2}
   Difficulty: 0

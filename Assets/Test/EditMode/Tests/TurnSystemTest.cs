@@ -3,7 +3,6 @@ using System.Reflection;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 using UnityEngine;
-using Unity.Collections;
 
 /// <summary>
 /// Test the multiplayer turn system and verifies that player
@@ -49,13 +48,13 @@ public class TurnSystemTest
         _ballMovement1 = _ball1.AddComponent<BallMovement>();
         _ballState1 = _ball1.AddComponent<BallState>();
         _ballState1.BallID.Value = 0;
-        _ballState1.PlayerName.Value = _player1.PlayerName.ToString();
+        _ballState1.PlayerName.Value = _player1.PlayerName;
         _ball2 = new GameObject("Ball 2");
         _ball2.AddComponent<Rigidbody2D>();
         _ballMovement2 = _ball2.AddComponent<BallMovement>();
         _ballState2 = _ball2.AddComponent<BallState>();
         _ballState2.BallID.Value = 1;
-        _ballState2.PlayerName.Value = _player2.PlayerName.ToString();
+        _ballState2.PlayerName.Value = _player2.PlayerName;
 
         // Gets access to the GameMaster's private player and ball lists for testing
         FieldInfo playerField = typeof(GameMaster).GetField(

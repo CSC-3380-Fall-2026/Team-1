@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 15024, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: HostAndTwoEditorClients
+  m_Name: HostAnd3EditorClients
   m_EditorClassIdentifier: UnityEditor.MultiplayerModule.dll::Unity.Multiplayer.PlayMode.Editor.ScenarioConfig
-  m_Description: Host and One Editor Client
+  m_Description: Host and three editor clients.
   m_EnableEditors: 1
   m_MainEditorInstance:
     Name: Main Editor
@@ -22,7 +22,7 @@ MonoBehaviour:
     - Main Editor|0_deploy
     m_Role: 3
     m_PlayerTag: 
-    m_InitialScene: {fileID: 102900000, guid: 600254a33fa42e547a029cef2a220fab, type: 3}
+    m_InitialScene: {fileID: 102900000, guid: 66b0b3f61082af64bab790eebc998274, type: 3}
   m_EditorInstances:
   - Name: Player 2
     <CorrespondingNodeId>k__BackingField: Player 2|1_run
@@ -40,6 +40,17 @@ MonoBehaviour:
     m_Nodes:
     - Player 3|2_run
     - Player 3|2_deploy
+    m_Role: 1
+    m_PlayerTag: 
+    m_InitialScene: {fileID: 0}
+    m_AdvancedConfiguration:
+      StreamLogsToMainEditor: 0
+      LogsColor: {r: 0.3643, g: 0.581, b: 0.8679, a: 1}
+  - Name: Player 4
+    <CorrespondingNodeId>k__BackingField: Player 4|3_run
+    m_Nodes:
+    - Player 4|3_run
+    - Player 4|3_deploy
     m_Role: 1
     m_PlayerTag: 
     m_InitialScene: {fileID: 0}
