@@ -157,6 +157,10 @@ public class LobbyManager : MonoBehaviour
             // Changes the scene to a pre-lobby one.
             SceneManager.LoadScene("GameMode");
         }
+
+        // If the disconnection happened mid-lobby, remove all the client's players.
+        if (GameMaster.Instance.CurrentGameState == GameMaster.GameState.Lobby)
+            GameMaster.Instance.RemoveAllPlayersWithClientID(clientID);
     }
 
     /// <summary>

@@ -480,6 +480,25 @@ public class GameMaster : NetworkBehaviour
     }
 
     /// <summary>
+    /// Removes all player profiles made with a given network ID from the game.
+    /// Should be used if a player disconnects mid-lobby or after they've been disconnected for too long mid-game.
+    /// </summary>
+    /// <param name="clientID">The network ID of the balls to be removed.</param>
+    public void RemoveAllPlayersWithClientID(ulong clientID)
+    {
+        // Only the host can change the players list.
+        if (!IsHost && !IsServer)
+            return;
+
+        // Just calls the function to remove an individual player once for every player found witht that client ID.
+        for (int i = 0; i < Players.Count; i++)
+        {
+            if (Players[i].PlayerClientID == clientID)
+                RemovePlayerRPC(i);
+        }
+    }
+
+    /// <summary>
     /// Begins the course. Handles prerequisites and state changes.
     /// </summary>
     public void StartCourse()
