@@ -30,6 +30,8 @@ public class LobbyManager : MonoBehaviour
             Destroy(this);
         else {
             Instance = this;
+
+            // Allows the object to persist between scenes.
             DontDestroyOnLoad(gameObject);
         }
     }
@@ -66,7 +68,6 @@ public class LobbyManager : MonoBehaviour
 
         // Subscribes relevant functions to events involving networking states.
         NetworkManager.Singleton.ConnectionApprovalCallback += HandleConnectionApproval;
-
         NetworkManager.Singleton.OnClientDisconnectCallback += HandleClientDisconnection;
 
         // Starts hosting the lobby based on the previously set information (device acts as both the server and a client).
@@ -91,8 +92,10 @@ public class LobbyManager : MonoBehaviour
         // Converts the client's connection request payload (currently the GUID only) to a string.
         string playerGUID = System.Text.Encoding.ASCII.GetString(approvalRequest.Payload);
 
+        // Determines whether to deny the connection based on if the round is ongoing and the client is a new or returning player.
         if (GameMaster.Instance != null && GameMaster.Instance.CurrentGameState != GameMaster.GameState.Lobby)
         {
+            // If a player in the players list has the same GUID as the connecting client, the client is reconnecting.
             bool foundPlayerWithGUID = false;
 
             foreach (Player player in GameMaster.Instance.Players)
@@ -104,6 +107,7 @@ public class LobbyManager : MonoBehaviour
                 }
             }
 
+            // Allows reconnecting clients even if the game is ongoing, denies new clients.
             if (foundPlayerWithGUID)
             {
                 Debug.Log($"Client {approvalRequest.ClientNetworkId} reconnected.");
@@ -122,6 +126,7 @@ public class LobbyManager : MonoBehaviour
             }
         }
 
+        // If the request was not ended prematurely, this is a new player.
         Debug.Log($"New client {approvalRequest.ClientNetworkId} approved.");
         approvalResponse.Approved = true;
 
@@ -130,17 +135,26 @@ public class LobbyManager : MonoBehaviour
         approvalResponse.CreatePlayerObject = false;
     }
 
+    /// <summary>
+    /// A handler for the OnClientDisconnected callback.
+    /// Unsubscribes from callbacks and changes the scene to a pre-lobby scene if this client disconnected.
+    /// </summary>
+    /// <param name="clientID">The network ID of the client that disconnected.</param>
     void HandleClientDisconnection(ulong clientID)
     {
         Debug.Log($"Client {clientID} disconnected.");
 
+        // Checks if this local client is the one disconnecting.
         if (clientID == NetworkManager.Singleton.LocalClientId)
         {
+            // Closes open connections and resets the NetworkManager, leaving it available to host/connect again.
             NetworkManager.Singleton.Shutdown();
 
+            // Unsubscribes from callbacks.
             NetworkManager.Singleton.ConnectionApprovalCallback -= HandleConnectionApproval;
             NetworkManager.Singleton.OnClientDisconnectCallback -= HandleClientDisconnection;
-            
+
+            // Changes the scene to a pre-lobby one.
             SceneManager.LoadScene("GameMode");
         }
     }

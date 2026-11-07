@@ -17,12 +17,15 @@ public class GameMaster : NetworkBehaviour
         private set;
     }
 
+    // A list of the different states the game may be in.
+    // Relevant for imposing limitations where needed (e.g. no new players can join when not in Lobby state, only reconnections).
     public enum GameState
     {
         Lobby,
         Game
     }
 
+    // The current state of the game. Currently only used to deny new players when not in Lobby state.
     public GameState CurrentGameState {get; private set;}
 
     // For testing purposes, the current course being played.
@@ -367,8 +370,8 @@ public class GameMaster : NetworkBehaviour
             return;
         }
 
-        // Loads the scene associated with the next hole
-        SceneManager.LoadScene(_currentHole.Map.name);
+        // Loads the scene associated with the next hole.
+        NetworkManager.SceneManager.LoadScene(_currentHole.Map.name, LoadSceneMode.Single);
     }
 
     /// <summary>
@@ -447,27 +450,50 @@ public class GameMaster : NetworkBehaviour
         Debug.Log($"Added {newPlayer.PlayerName} with client ID {newPlayer.PlayerClientID}. Players in lobby: {Players.Count}.");
     }
 
+    /// <summary>
+    /// Handles removing a player from the players list. Removes the ball at the same index as well, if it exists.
+    /// </summary>
+    /// <param name="playerPositionInPlayersList">The index of the player to be removed in the players list</param>
     [Rpc(SendTo.ClientsAndHost)]
     public void RemovePlayerRPC(int playerPositionInPlayersList)
     {
-        if (playerPositionInPlayersList >= Players.Count)
+        // Out of bounds detection.
+        if (playerPositionInPlayersList >= Players.Count || playerPositionInPlayersList < 0)
         {
             Debug.Log($"Index of player ({playerPositionInPlayersList}) intended to be removed is outside the range of players.");
             return;
         }
 
+        // Only the server can change the players list.
         if (IsHost)
+        {
             Players.RemoveAt(playerPositionInPlayersList);
 
+            // Destroying the ball (NetworkObject) on the host/server destroys it for all clients as well.
+            if (_balls.Count > playerPositionInPlayersList)
+                Destroy(_balls[playerPositionInPlayersList]);
+        }
+
+        // Each client maintains its own balls list, so each has to remove the ball individually.
         if (_balls.Count > playerPositionInPlayersList)
             _balls.RemoveAt(playerPositionInPlayersList);
     }
 
+    /// <summary>
+    /// Begins the course. Handles prerequisites and state changes.
+    /// </summary>
     public void StartCourse()
     {
+        // Changes the scene to that of the first hole of the course for all clients.
         NetworkManager.SceneManager.LoadScene(_currentCourse.Holes[0].Map.name, LoadSceneMode.Single);
+
+        // Needed to let the LobbyManager know to not let new clients in, only reconnections.
         CurrentGameState = GameState.Game;
+
+        // Non-ball network objects need to be identified so they can change ownership as player turns change.
         PopulateListWithObjectsToSwitchOwner();
+
+        // Spawns the balls and changes ownership of relevant network objects to the client of the player whose turn it is.
         SpawnBallsRPC();
     }
 
@@ -513,15 +539,5 @@ public class GameMaster : NetworkBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
-    }
-
-    /// <summary>
-    /// Called when every object has been initialized (non-network).
-    /// Adds relevant network objects to the list of those whose ownership will be changed to the client
-    /// of the player whose turn it is.
-    /// </summary>
-    void Start()
-    {
-        PopulateListWithObjectsToSwitchOwner();
     }
 }

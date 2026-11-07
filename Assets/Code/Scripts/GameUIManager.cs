@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 /// <summary>
-/// Contains state and behavior related to UI elements.
+/// Contains state and behavior related to mid-course UI elements.
 /// </summary>
 public class GameUIManager : MonoBehaviour
 {
