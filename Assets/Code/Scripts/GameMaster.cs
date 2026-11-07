@@ -439,6 +439,22 @@ public class GameMaster : NetworkBehaviour
         Debug.Log($"Added {newPlayer.PlayerName} with client ID {newPlayer.PlayerClientID}. Players in lobby: {Players.Count}.");
     }
 
+    [Rpc(SendTo.ClientsAndHost)]
+    public void RemovePlayerRPC(int playerPositionInPlayersList)
+    {
+        if (playerPositionInPlayersList <= Players.Count)
+        {
+            Debug.Log("Index of player intended to be removed is outside the range of players.");
+            return;
+        }
+
+        if (IsHost || Players[playerPositionInPlayersList].PlayerClientID == NetworkManager.LocalClientId)
+            Players.RemoveAt(playerPositionInPlayersList);
+
+        if (_balls.Count > playerPositionInPlayersList)
+        _balls.RemoveAt(playerPositionInPlayersList);
+    }
+
     /// <summary>
     /// Adds every object whose owner should be changed to the client of the player whose turn it is to the list.
     /// </summary>
