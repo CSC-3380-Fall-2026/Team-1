@@ -17,6 +17,17 @@ public class GameMaster : NetworkBehaviour
         private set;
     }
 
+    // A list of the different states the game may be in.
+    // Relevant for imposing limitations where needed (e.g. no new players can join when not in Lobby state, only reconnections).
+    public enum GameState
+    {
+        Lobby,
+        Game
+    }
+
+    // The current state of the game. Currently only used to deny new players when not in Lobby state.
+    public GameState CurrentGameState {get; private set;}
+
     // For testing purposes, the current course being played.
     [SerializeField]
     Course _currentCourse;
@@ -48,15 +59,6 @@ public class GameMaster : NetworkBehaviour
      // The ball object to be created at the beginning of the round.
     [SerializeField, Tooltip("The ball object to be created at the beginning of the round.")]
     GameObject _ballPrefab;
-
-    // A list of all reset points whose locations will be used as reset points.
-    // Anything that handles resets will choose a subset of these objects (via index) to determine potential locations.
-    [SerializeField, Tooltip("A list of potential reset points, including spawn points."), Header("Ball Reset")]
-    GameObject[] _resetLocationObjects;
-
-    // A list containing the indices of reset location objects in the general list that are used as spawn points.
-    [SerializeField, Tooltip("The indices of the reset location objects denoting spawn points.")]
-    int[] _spawnPointIDs;
 
     // Objects in these layers will be considered to be obstructing the reset point.
     [Tooltip("Objects in these layers will be considered to be obstructing the reset point.")]
@@ -97,7 +99,7 @@ public class GameMaster : NetworkBehaviour
         // To account for situations where multiple balls are reset in the same physics update (and thus cannot check for obstruction),
         // can manually skip a number of indices (if it is known a ball will be there).
         for (int i = startFromIndex; i < resetLocationObjectsIndices.Length; i++)
-            consideredResetLocationObjects.Add(_resetLocationObjects[resetLocationObjectsIndices[i]]);
+            consideredResetLocationObjects.Add(HoleData.Instance.ResetLocationObjects[resetLocationObjectsIndices[i]]);
 
         // Checks if each reset location is unobstructed.
         foreach (GameObject resetLocationObject in consideredResetLocationObjects)
@@ -233,7 +235,7 @@ public class GameMaster : NetworkBehaviour
                 // Its ID should be the position of the owning player on the players list.
                 BallState playerBallState = playerBall.GetComponent<BallState>();
                 playerBallState.BallID.Value = i;
-                playerBallState.PlayerName.Value = player.PlayerName.ToString();
+                playerBallState.PlayerName.Value = player.PlayerName;
 
                 // Gets a reference to the new ball's NetworkObject component and spawns it on each client.
                 NetworkObject ballNetworkObjectComponent = playerBall.GetComponent<NetworkObject>();
@@ -242,7 +244,7 @@ public class GameMaster : NetworkBehaviour
                 // Moves the new ball to an unobstructed spawnpoint by the reset function.
                 // Every ball will be spawned before the next physics update, so reset cannot check for obstruction.
                 // To get around this, spawnpoints obstructed by balls just spawned are manually ignored.
-                ResetBallRPC(i, _spawnPointIDs, true, i);
+                ResetBallRPC(i, HoleData.Instance.SpawnPointIndices, true, i);
 
                 // Every ball should be owned by the player whose turn it is, so that their physics simulation is accurate.
                 ballNetworkObjectComponent.ChangeOwnership(Players[CurrentPlayerTurn.Value].PlayerClientID);
@@ -256,8 +258,25 @@ public class GameMaster : NetworkBehaviour
     /// <param name="ballGameObject">The ball GameObject to be added.</param>
     public void AddPlayerBall(GameObject ballGameObject)
     {
+        // Prevents the ball from being added if a ball with the same ID exists in the list already.
+        // OnPostNetworkSpawn is called on every client for every ball added to any of them (exponential)
+        // so balls would be added multiple times otherwise.
+        BallState addedBallStateComponent = ballGameObject.GetComponent<BallState>();
+        foreach (GameObject ball in _balls)
+        {
+            BallState ballStateComponent = ball.GetComponent<BallState>();
+
+            if (addedBallStateComponent.BallID.Value == ballStateComponent.BallID.Value)
+            {
+                Debug.Log("Ball exists in the balls list of this client already.");
+                return;
+            }
+        }
+
         // Adds the ball to the list in the last position. Likely out of order.
         _balls.Add(ballGameObject);
+
+        Debug.Log($"Balls count: {_balls.Count}");
 
         // A list that will store the balls newly reordered according to their IDs.
         List<GameObject> temporaryListForReorganization = new List<GameObject>(_balls.Count);
@@ -359,8 +378,8 @@ public class GameMaster : NetworkBehaviour
             return;
         }
 
-        // Loads the scene associated with the next hole
-        SceneManager.LoadScene(_currentHole.Map.name);
+        // Loads the scene associated with the next hole.
+        NetworkManager.SceneManager.LoadScene(_currentHole.Map.name, LoadSceneMode.Single);
     }
 
     /// <summary>
@@ -368,7 +387,6 @@ public class GameMaster : NetworkBehaviour
     /// Gets relevant information to update its score and disables it.
     /// </summary>
     /// <param name="ballThatEnteredHoleID">The ID of the ball gameObject in the balls list which just entered the hole.</param>
-    [Rpc(SendTo.ClientsAndHost)]
     public void HandleGoalRPC(int ballThatEnteredHoleID)
     {
         // Only the host needs to calculate the score and update the value for all the clients.
@@ -408,13 +426,14 @@ public class GameMaster : NetworkBehaviour
     /// <param name="playerName">The name of the newly added player.</param>
     /// <param name="playerClientID">The NetworkClientID that owns the newly added player.</param>
     /// <param name="playerGUID">The GUID of the newly added player. Used to determine if reconnecting.</param>
-    public void AddPlayer(string playerName, ulong playerClientID, string playerGUID)
+    [Rpc(SendTo.Server)]
+    public void AddPlayerRPC(string playerName, ulong playerClientID, string playerGUID)
     {
         // Updates the player's ClientID if the player was already in the list based on GUID.
         for(int i = 0; i < Players.Count; i++)
         {
             // GUID will be determined and stored when launching the game (probably PlayerPrefs).
-            if (Players[i].PlayerGUID == playerGUID)
+            if (Players[i].PlayerGUID == playerGUID && Players[i].PlayerClientID != playerClientID)
             {
                 // Players in the NetworkList cannot be edited directly, so makes a clone with the new ID change
                 // then sets the player to the new clone.
@@ -422,8 +441,7 @@ public class GameMaster : NetworkBehaviour
                 playerThatExists.PlayerClientID = playerClientID;
                 Players[i] = playerThatExists;
 
-                Debug.Log("Player already exists. Updated client ID");
-                return;
+                Debug.Log("Player with same GUID but different Client ID exists. Updated client ID");
             }
         }
 
@@ -437,6 +455,69 @@ public class GameMaster : NetworkBehaviour
         Players.Add(newPlayer);
 
         Debug.Log($"Added {newPlayer.PlayerName} with client ID {newPlayer.PlayerClientID}. Players in lobby: {Players.Count}.");
+    }
+
+    /// <summary>
+    /// Handles removing a player from the players list. Removes the ball at the same index as well, if it exists.
+    /// </summary>
+    /// <param name="playerPositionInPlayersList">The index of the player to be removed in the players list</param>
+    [Rpc(SendTo.ClientsAndHost)]
+    public void RemovePlayerRPC(int playerPositionInPlayersList)
+    {
+        // Out of bounds detection.
+        if (playerPositionInPlayersList >= Players.Count || playerPositionInPlayersList < 0)
+        {
+            Debug.Log($"Index of player ({playerPositionInPlayersList}) intended to be removed is outside the range of players.");
+            return;
+        }
+
+        // Only the server can change the players list.
+        if (IsHost)
+        {
+            Players.RemoveAt(playerPositionInPlayersList);
+
+            // Destroying the ball (NetworkObject) on the host/server destroys it for all clients as well.
+            if (_balls.Count > playerPositionInPlayersList)
+                Destroy(_balls[playerPositionInPlayersList]);
+        }
+
+        // Each client maintains its own balls list, so each has to remove the ball individually.
+        if (_balls.Count > playerPositionInPlayersList)
+            _balls.RemoveAt(playerPositionInPlayersList);
+    }
+
+    /// <summary>
+    /// Removes all player profiles made with a given network ID from the game.
+    /// Should be used if a player disconnects mid-lobby or after they've been disconnected for too long mid-game.
+    /// </summary>
+    /// <param name="clientID">The network ID of the balls to be removed.</param>
+    public void RemoveAllPlayersWithClientID(ulong clientID)
+    {
+        // Only the host can change the players list.
+        if (!IsHost && !IsServer)
+            return;
+
+        // Just calls the function to remove an individual player once for every player found witht that client ID.
+        for (int i = 0; i < Players.Count; i++)
+        {
+            if (Players[i].PlayerClientID == clientID)
+                RemovePlayerRPC(i);
+        }
+    }
+
+    /// <summary>
+    /// Begins the course. Handles prerequisites and state changes.
+    /// </summary>
+    public void StartCourse()
+    {
+        // Changes the scene to that of the first hole of the course for all clients.
+        NetworkManager.SceneManager.LoadScene(_currentCourse.Holes[0].Map.name, LoadSceneMode.Single);
+
+        // Needed to let the LobbyManager know to not let new clients in, only reconnections.
+        CurrentGameState = GameState.Game;
+
+        // Non-ball network objects need to be identified so they can change ownership as player turns change.
+        PopulateListWithObjectsToSwitchOwner();
     }
 
     /// <summary>
@@ -477,17 +558,9 @@ public class GameMaster : NetworkBehaviour
         // Ensures that there will only be one instance of the GameMaster at any time.
         if (Instance != null && Instance != this)
             Destroy(this);
-        else
+        else {
             Instance = this;
-    }
-
-    /// <summary>
-    /// Called when every object has been initialized (non-network).
-    /// Adds relevant network objects to the list of those whose ownership will be changed to the client
-    /// of the player whose turn it is.
-    /// </summary>
-    void Start()
-    {
-        PopulateListWithObjectsToSwitchOwner();
+            DontDestroyOnLoad(gameObject);
+        }
     }
 }

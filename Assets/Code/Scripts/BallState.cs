@@ -43,23 +43,7 @@ public class BallState : NetworkBehaviour
         // Instead, the server changes the current player turn (which is a shared network variable) and the client
         // will disable/enable the BallMovement component of each ball on their local list based on if it is the
         // ball's turn and the client is the owner (networking-wise) of the ball's NetworkObject.
-        GameMaster.Instance.CurrentPlayerTurn.OnValueChanged += (previousTurn, newTurn) =>
-        {
-            // Disables this ball's movement component if its ID is the previous turn's value.
-            if (BallID.Value == previousTurn)
-            {
-                ballMovementComponent.BallTurnEnded?.Invoke();
-                ballMovementComponent.enabled = false;
-            }
-
-            // Enabes this ball's movement component if its ID is the now current turn's value.
-            // Additionally, only the NetworkObject's owner should be able to launch it.
-            if (BallID.Value == newTurn && IsOwner)
-            {
-                ballMovementComponent.enabled = true;
-                ballMovementComponent.BallTurnBegan?.Invoke();
-            }
-        };
+        GameMaster.Instance.CurrentPlayerTurn.OnValueChanged += HandlePlayerTurnValueChanged;
 
         // The server cannot enable/disable the movement component on spawn, so the client
         // should do so by enabling/disabling the movement component if it is the first ball on the list
@@ -71,5 +55,44 @@ public class BallState : NetworkBehaviour
         }
         else
             ballMovementComponent.enabled = false;
+    }
+
+    /// <summary>
+    /// Handles the event raised when the player's turn changes value.
+    /// Disables the ball movement component of the ball of the previous turn, enables that of the new turn.
+    /// </summary>
+    /// <param name="previousTurnValue">The index of the player whose turn it was.</param>
+    /// <param name="newTurnValue">The index of the player whose turn it now is.</param>
+    void HandlePlayerTurnValueChanged(int previousTurnValue, int newTurnValue)
+    {
+        // A reference to the ball movement component on this object.
+        BallMovement ballMovementComponent = GetComponent<BallMovement>();
+
+        // Disables this ball's movement component if its ID is the previous turn's value.
+        if (BallID.Value == previousTurnValue)
+        {
+            ballMovementComponent.BallTurnEnded?.Invoke();
+            ballMovementComponent.enabled = false;
+        }
+
+        // Enabes this ball's movement component if its ID is the now current turn's value.
+        // Additionally, only the NetworkObject's owner should be able to launch it.
+        if (BallID.Value == newTurnValue && IsOwner)
+        {
+            ballMovementComponent.enabled = true;
+            ballMovementComponent.BallTurnBegan?.Invoke();
+        }
+    }
+
+    /// <summary>
+    /// This function is called when the gameObject is about to be destroyed.
+    /// Unsubscribes from relevant events.
+    /// </summary>
+    public override void OnDestroy()
+    {
+        // Overriding base function, so need to call parent's functionality.
+        base.OnDestroy();
+
+        GameMaster.Instance.CurrentPlayerTurn.OnValueChanged -= HandlePlayerTurnValueChanged;
     }
 }

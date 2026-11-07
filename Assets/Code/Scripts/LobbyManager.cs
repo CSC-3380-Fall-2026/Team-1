@@ -1,6 +1,7 @@
 using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Contains properties and behavior related to the handling of player connections.
@@ -27,9 +28,15 @@ public class LobbyManager : MonoBehaviour
         // Singleton handling.
         if (Instance != null && Instance != this)
             Destroy(this);
-        else
+        else {
             Instance = this;
 
+            // Allows the object to persist between scenes.
+            DontDestroyOnLoad(gameObject);
+        }
+    }
+    void Start()
+    {
         // Gets a reference to the UnityTransport component on the GameObject for hosting/joining a game.
         _unityTransport = NetworkManager.Singleton.GetComponent<UnityTransport>();
     }
@@ -50,8 +57,8 @@ public class LobbyManager : MonoBehaviour
         // Tells the NetworkManager to use a ClientServer network topology. Includes simultaneous Server/Client (host).
         NetworkManager.Singleton.NetworkConfig.NetworkTopology = NetworkTopologyTypes.ClientServer;
 
-        // Constructs the payload consisting of the player's name and GUID.
-        string playerInformation = "Host," + System.Guid.NewGuid().ToString();
+        // Constructs the payload consisting of the player's GUID.
+        string playerInformation = LocalGameData.Instance.GUID;
 
         // Sets the payload to the previously constructed string.
         NetworkManager.Singleton.NetworkConfig.ConnectionData = System.Text.Encoding.ASCII.GetBytes(playerInformation);
@@ -60,7 +67,8 @@ public class LobbyManager : MonoBehaviour
         NetworkManager.Singleton.NetworkConfig.ConnectionApproval = true;
 
         // Subscribes relevant functions to events involving networking states.
-        NetworkManager.Singleton.ConnectionApprovalCallback = HandleConnectionApproval;
+        NetworkManager.Singleton.ConnectionApprovalCallback += HandleConnectionApproval;
+        NetworkManager.Singleton.OnClientDisconnectCallback += HandleClientDisconnection;
 
         // Starts hosting the lobby based on the previously set information (device acts as both the server and a client).
         NetworkManager.Singleton.StartHost();
@@ -81,37 +89,78 @@ public class LobbyManager : MonoBehaviour
             return;
         }
 
+        // Converts the client's connection request payload (currently the GUID only) to a string.
+        string playerGUID = System.Text.Encoding.ASCII.GetString(approvalRequest.Payload);
+
+        // Determines whether to deny the connection based on if the round is ongoing and the client is a new or returning player.
+        if (GameMaster.Instance != null && GameMaster.Instance.CurrentGameState != GameMaster.GameState.Lobby)
+        {
+            // If a player in the players list has the same GUID as the connecting client, the client is reconnecting.
+            bool foundPlayerWithGUID = false;
+
+            foreach (Player player in GameMaster.Instance.Players)
+            {
+                if (player.PlayerGUID == playerGUID)
+                {
+                    foundPlayerWithGUID = true;
+                    break;
+                }
+            }
+
+            // Allows reconnecting clients even if the game is ongoing, denies new clients.
+            if (foundPlayerWithGUID)
+            {
+                Debug.Log($"Client {approvalRequest.ClientNetworkId} reconnected.");
+                approvalResponse.Approved = true;
+
+                // Tells the client not to create an object representing the player.
+                // No need to create a player object, as the GameManager handles that functionality.
+                approvalResponse.CreatePlayerObject = false;
+
+                return;
+            } else
+            {
+                approvalResponse.Reason = "A new player cannot join a game already in progress.";
+                approvalResponse.Approved = false;
+                return;
+            }
+        }
+
+        // If the request was not ended prematurely, this is a new player.
+        Debug.Log($"New client {approvalRequest.ClientNetworkId} approved.");
+        approvalResponse.Approved = true;
+
         // Tells the client not to create an object representing the player.
         // No need to create a player object, as the GameManager handles that functionality.
         approvalResponse.CreatePlayerObject = false;
+    }
 
-        // Splits the request's payload, consisting of a comma-separated ASCII string in byte format, into separate strings.
-        string playerInformationText = System.Text.Encoding.ASCII.GetString(approvalRequest.Payload);
-        string[] playerInformationArray = playerInformationText.Split(",");
+    /// <summary>
+    /// A handler for the OnClientDisconnected callback.
+    /// Unsubscribes from callbacks and changes the scene to a pre-lobby scene if this client disconnected.
+    /// </summary>
+    /// <param name="clientID">The network ID of the client that disconnected.</param>
+    void HandleClientDisconnection(ulong clientID)
+    {
+        Debug.Log($"Client {clientID} disconnected.");
 
-        // Containers for the player name and GUID. Filled if the payload is formatted correctly.
-        string playerName, playerGUID;
-
-        // Rejects the connection request if the payload was formatted incorrectly.
-        if (playerInformationArray.Length != 2)
+        // Checks if this local client is the one disconnecting.
+        if (clientID == NetworkManager.Singleton.LocalClientId)
         {
-            approvalResponse.Reason = "Missing player information. Need name and identifier (GUID) in a comma-separated list (no spaces).";
-            approvalResponse.Approved = false;
-            return;
-        } else
-        {
-            // Fills the name and ID with the appropriate values from the comma-separated list.
-            playerName = playerInformationArray[0];
-            playerGUID = playerInformationArray[1];
+            // Closes open connections and resets the NetworkManager, leaving it available to host/connect again.
+            NetworkManager.Singleton.Shutdown();
 
-            // Adds a player for the new connection using the previously gathered information.
-            GameMaster.Instance.AddPlayer(playerName, approvalRequest.ClientNetworkId, playerGUID);
+            // Unsubscribes from callbacks.
+            NetworkManager.Singleton.ConnectionApprovalCallback -= HandleConnectionApproval;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= HandleClientDisconnection;
 
-            // Changes the response to inform the client that the request was approved.
-            approvalResponse.Approved = true;
-
-            Debug.Log($"Client {approvalRequest.ClientNetworkId} approved.");
+            // Changes the scene to a pre-lobby one.
+            SceneManager.LoadScene("GameMode");
         }
+
+        // If the disconnection happened mid-lobby, remove all the client's players.
+        if (GameMaster.Instance.CurrentGameState == GameMaster.GameState.Lobby)
+            GameMaster.Instance.RemoveAllPlayersWithClientID(clientID);
     }
 
     /// <summary>
@@ -121,8 +170,8 @@ public class LobbyManager : MonoBehaviour
     /// <param name="hostPort">The port listening for connections on the hosting device.</param>
     public void ConnectToHost(string hostIPAddress, string hostPort)
     {
-        // Constructs the payload consisting of the player's name and GUID.
-        string playerInformation = "ClientName," + System.Guid.NewGuid().ToString();
+        // Constructs the payload consisting of the player's GUID.
+        string playerInformation = LocalGameData.Instance.GUID;
 
         // Sets the payload to the previously constructed string.
         NetworkManager.Singleton.NetworkConfig.ConnectionData = System.Text.Encoding.ASCII.GetBytes(playerInformation);
