@@ -98,4 +98,21 @@ public class BallTimeManager : NetworkBehaviour
         if (_measureTime && IsOwner)
             TimeSpentInPlay.Value += Time.deltaTime * _timeRateModifier;
     }
+
+    /// <summary>
+    /// This function is called just before the gameObject is destroyed.
+    /// Unsubscribes from relevant events.
+    /// </summary>
+    public override void OnDestroy()
+    {
+        // Override, so would be prudent to call base function.
+        base.OnDestroy();
+
+        // Unsubscribes from the ball's events.
+        BallMovement ballMovementComponent = GetComponent<BallMovement>();
+        ballMovementComponent.BallTurnBegan -= StartMeasuringTime;
+        ballMovementComponent.BallTurnEnded -= StopMeasuringTime;
+        ballMovementComponent.BallBeganAiming -= SetTimeRateModifierToAimingSpeed;
+        ballMovementComponent.BallStoppedAiming -= OnBallStoppedAiming;
+    }
 }
