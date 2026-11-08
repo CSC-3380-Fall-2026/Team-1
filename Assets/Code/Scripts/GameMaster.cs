@@ -182,6 +182,7 @@ public class GameMaster : NetworkBehaviour
     /// time spent and the current hole's score modifiers.
     /// </summary>
     /// <param name="shotCount">The number of shots made before reaching the goal.</param>
+    /// <param name="timeSpent">The amount of time spent during the player's turn before reaching the goal.</param>
     /// <returns>The score calculated given the number of shots and the current hole's values.</returns>
     float CalculateScore(int shotCount, float timeSpent)
     {
@@ -371,10 +372,16 @@ public class GameMaster : NetworkBehaviour
         //Advances the current hole index
         _currentHoleID++;
 
-        // Stops progression if the current hole was the final hole in the course
+        // Stops progression if the current hole was the final hole in the course.
+        // Will move to specific scene for scoring and the leaderboard in the future. For now, just prints score info.
         if (_currentHoleID >= _currentCourse.Holes.Length)
         {
             Debug.Log("All players have completed the course.");
+
+            // Prints each player's score info as a debug log.
+            foreach (Player player in Players)
+                Debug.Log($"{player.PlayerName}'s score: {player.PlayerScore}. Hits: {player.PlayerHits}. Time Spent: {player.PlayerTimeSpent}");
+
             return;
         }
 
@@ -387,6 +394,7 @@ public class GameMaster : NetworkBehaviour
     /// Gets relevant information to update its score and disables it.
     /// </summary>
     /// <param name="ballThatEnteredHoleID">The ID of the ball gameObject in the balls list which just entered the hole.</param>
+    [Rpc(SendTo.ClientsAndHost)]
     public void HandleGoalRPC(int ballThatEnteredHoleID)
     {
         // Only the host needs to calculate the score and update the value for all the clients.
@@ -403,6 +411,8 @@ public class GameMaster : NetworkBehaviour
             // Players structs in the players NetworkList cannot be changed directly, but can be set to a new Player.
             // Creates a new player struct based on the old player, sets the new score and replaces the old one with it.
             Player playerWhoOwnsBall = Players[ballThatEnteredHoleID];
+            playerWhoOwnsBall.PlayerHits += launchCount;
+            playerWhoOwnsBall.PlayerTimeSpent += timeSpent;
             playerWhoOwnsBall.PlayerScore += CalculateScore(launchCount, timeSpent);
             Players[ballThatEnteredHoleID] = playerWhoOwnsBall;
 
@@ -450,6 +460,9 @@ public class GameMaster : NetworkBehaviour
         newPlayer.PlayerName = playerName;
         newPlayer.PlayerClientID = playerClientID;
         newPlayer.PlayerGUID = playerGUID;
+        newPlayer.PlayerScore = 0;
+        newPlayer.PlayerHits = 0;
+        newPlayer.PlayerTimeSpent = 0;
 
         // Adds the player to the players list, automatically synchronizing across connected clients.
         Players.Add(newPlayer);
