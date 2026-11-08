@@ -13,10 +13,10 @@ GameObject:
   - component: {fileID: 564981912406092330}
   - component: {fileID: 6252654208722297321}
   - component: {fileID: 5230685127457652330}
-  - component: {fileID: 1050763229109611107}
   - component: {fileID: 264271947026590042}
   - component: {fileID: 6725211385542879696}
   - component: {fileID: 7159895773572692828}
+  - component: {fileID: 1050763229109611107}
   - component: {fileID: 4748777286496448572}
   - component: {fileID: -3533331574250269508}
   m_Layer: 6
@@ -191,20 +191,6 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 0.5
---- !u!114 &1050763229109611107
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1446885788393809777}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e0605eb68e3ed2148957f6e2824e22d8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
-  BallID: 0
-  PlayerName: 
 --- !u!114 &264271947026590042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -217,9 +203,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 219fdf94de7e96044bf7f6cf0c0b8408, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+  ShowTopMostFoldoutHeaderGroup: 1
   CurrentGroundState: 0
   CurrentMotionState: 0
-  LaunchCount: 0
+  LaunchCount:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
   _movementThreshold: 0.2
   _ballInteractionRadius: 1
   _forceMultiplier: 100
@@ -236,6 +227,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 426b6c860d5f64bb3a171c82819a718b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ChronoShot::BallFriction
+  ShowTopMostFoldoutHeaderGroup: 1
   FrictionCheckLayers:
     serializedVersion: 2
     m_Bits: 8
@@ -252,8 +244,104 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 832dfdf719a13234dbfce1574f72c562, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ChronoShot::BallTimeManager
+  ShowTopMostFoldoutHeaderGroup: 1
+  TimeSpentInPlay:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
   _regularTimeRateModifier: 1
   _aimingTimeRateModifier: 1
+--- !u!114 &1050763229109611107
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1446885788393809777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0605eb68e3ed2148957f6e2824e22d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  ShowTopMostFoldoutHeaderGroup: 1
+  BallID:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
+  PlayerName:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue:
+      utf8LengthInBytes: 0
+      bytes:
+        offset0000:
+          byte0000: 0
+          byte0001: 0
+          byte0002: 0
+          byte0003: 0
+          byte0004: 0
+          byte0005: 0
+          byte0006: 0
+          byte0007: 0
+          byte0008: 0
+          byte0009: 0
+          byte0010: 0
+          byte0011: 0
+          byte0012: 0
+          byte0013: 0
+          byte0014: 0
+          byte0015: 0
+        offset0016:
+          byte0000: 0
+          byte0001: 0
+          byte0002: 0
+          byte0003: 0
+          byte0004: 0
+          byte0005: 0
+          byte0006: 0
+          byte0007: 0
+          byte0008: 0
+          byte0009: 0
+          byte0010: 0
+          byte0011: 0
+          byte0012: 0
+          byte0013: 0
+          byte0014: 0
+          byte0015: 0
+        offset0032:
+          byte0000: 0
+          byte0001: 0
+          byte0002: 0
+          byte0003: 0
+          byte0004: 0
+          byte0005: 0
+          byte0006: 0
+          byte0007: 0
+          byte0008: 0
+          byte0009: 0
+          byte0010: 0
+          byte0011: 0
+          byte0012: 0
+          byte0013: 0
+          byte0014: 0
+          byte0015: 0
+        byte0048: 0
+        byte0049: 0
+        byte0050: 0
+        byte0051: 0
+        byte0052: 0
+        byte0053: 0
+        byte0054: 0
+        byte0055: 0
+        byte0056: 0
+        byte0057: 0
+        byte0058: 0
+        byte0059: 0
+        byte0060: 0
+        byte0061: 0
 --- !u!114 &4748777286496448572
 MonoBehaviour:
   m_ObjectHideFlags: 0
