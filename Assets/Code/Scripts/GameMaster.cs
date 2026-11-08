@@ -182,6 +182,7 @@ public class GameMaster : NetworkBehaviour
     /// time spent and the current hole's score modifiers.
     /// </summary>
     /// <param name="shotCount">The number of shots made before reaching the goal.</param>
+    /// <param name="timeSpent">The amount of time spent during the player's turn before reaching the goal.</param>
     /// <returns>The score calculated given the number of shots and the current hole's values.</returns>
     float CalculateScore(int shotCount, float timeSpent)
     {
