@@ -64,24 +64,11 @@ public class BeginnerCourseTimerTest
     {
         _ballMovement.BallTurnBegan?.Invoke();
 
-        /*
-        Reflection sets the private timer value to simulate time already accumulated
-        during the course
-        */
-        
-        typeof(BallTimeManager)
-            .GetField("<TimeSpentInPlay>k__BackingField",
-
-            /* 
-            Reflection sets an accumulated timer value so the test can verify that completing
-            a hole does not reset it
-            */
-
-                BindingFlags.NonPublic | BindingFlags.Instance)
-            .SetValue(_ballTimeManager, 5f);
+        // Simulates five seconds of accumulated course time
+        _ballTimeManager.TimeSpentInPlay.Value = 5f;
         _ballMovement.BallTurnEnded?.Invoke();
         _ballMovement.BallTurnBegan?.Invoke();
-        Assert.AreEqual(5f, _ballTimeManager.TimeSpentInPlay);
+        Assert.AreEqual(5f, _ballTimeManager.TimeSpentInPlay.Value);
     }
 
     /// <summary>
@@ -90,13 +77,11 @@ public class BeginnerCourseTimerTest
     [Test]
     public void IndividualHoleCompletionDoesNotResetTimer()
     {
-        typeof(BallTimeManager)
-            .GetField("<TimeSpentInPlay>k__BackingField", 
-                BindingFlags.NonPublic | BindingFlags.Instance)
-            .SetValue(_ballTimeManager, 5f);
+        // Simulates five seconds of accumulated course time
+        _ballTimeManager.TimeSpentInPlay.Value = 5f;
         
         _ballMovement.BallTurnEnded?.Invoke();
-        Assert.AreEqual(5f, _ballTimeManager.TimeSpentInPlay);
+        Assert.AreEqual(5f, _ballTimeManager.TimeSpentInPlay.Value);
     }
 
     /// <summary>
@@ -136,32 +121,11 @@ public class BeginnerCourseTimerTest
     /// Tests that the timer resets when a new course begins
     /// </summary>
     [Test]
-    public void TimerResetsWhenNewCourseBegins()
+    public void TimerStartsAtZeroForNewBall()
     {
 
-        /*
-        Reflection sets the timer to a nonzero value to simulate
-        time accumulated from a previous course
-        */
-        
-        typeof(BallTimeManager)
-            .GetField("<TimeSpentInPlay>k__BackingField",
-                BindingFlags.NonPublic | BindingFlags.Instance)
-            .SetValue(_ballTimeManager, 10f);
-        
-        /* 
-        Reflection calls the private Start method to simulate
-        initialization when a new course begins
-        */
-
-        MethodInfo startMethod = typeof(BallTimeManager).GetMethod(
-            "Start",
-            BindingFlags.NonPublic | BindingFlags.Instance
-        );
-
-        startMethod.Invoke(_ballTimeManager, null);
-
-        Assert.AreEqual(0f, _ballTimeManager.TimeSpentInPlay);
+        // A newly created ball timer starts at zero
+        Assert.AreEqual(0f, _ballTimeManager.TimeSpentInPlay.Value);
     }
 
 }
