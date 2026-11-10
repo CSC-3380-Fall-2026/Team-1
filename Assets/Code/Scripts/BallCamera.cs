@@ -17,10 +17,15 @@ public class BallCamera : MonoBehaviour
 
     // Stores the current velocity used to SmoothDamp
     Vector3 _cameraVelocity = Vector3.zero;
+
+    // Minimum and maximum zoom levels for the camera
     [SerializeField] float _minZoom = 5f;
     [SerializeField] float _maxZoom = 12f;
+
+    // This controls how fast the camera can zoom in and out
     [SerializeField] float _zoomSpeed = 2f;
 
+    // Stores the desired camera zoom level
     float _targetZoom;
 
     /// <summary>
