@@ -303,39 +303,81 @@ public class BeginnerCourseTimerTest
         _ballMovement.BallTurnEnded?.Invoke();
     }
 
-
-
     /// <summary>
-    /// Tests that the timer stops when the final hole of the beginner course is complete
+    /// Tests that the ball's timer stops increasing after the
+    /// player completes the final hole of the beginner course
     /// </summary>
-    [Test]
-    public void TimerStopsWhenFinalHoleIsCompleted()
+    /// <returns> An enumerator that allows the timer to be checked after goal completion </returns>
+    [UnityTest]
+    public IEnumerator TimerStopsWhenFinalHoleIsCompleted()
     {
-        /*
-        Reflection accesses the private timer methods so the test can simulate starting and 
-        stopping time measurement
-        */
-
-        MethodInfo startMeasuringTime = typeof(BallTimeManager).GetMethod(
-            "StartMeasuringTime", BindingFlags.NonPublic | BindingFlags.Instance
+        // Sets the current hole to the final hole of the course
+        FieldInfo currentHoleField = typeof(GameMaster).GetField(
+            "_currentHoleID",
+            BindingFlags.NonPublic | BindingFlags.Instance
         );
 
-        MethodInfo stopMeasuringTime = typeof(BallTimeManager).GetMethod(
-            "StopMeasuringTime", BindingFlags.NonPublic | BindingFlags.Instance
+        Assert.IsNotNull(currentHoleField);
+
+        FieldInfo currentCourseField = typeof(GameMaster).GetField(
+            "_currentCourse",
+            BindingFlags.NonPublic | BindingFlags.Instance
         );
 
-        /* Reflection checks the private timer state to verify that measuring time starts
-        and stops correctly
-        */
+        Assert.IsNotNull(currentCourseField);
 
-        FieldInfo measureTimeField = typeof(BallTimeManager).GetField(
-            "_measureTime", BindingFlags.NonPublic | BindingFlags.Instance
+        Course course = (Course)currentCourseField.GetValue(_gameMaster);
+
+        Assert.IsNotNull(course);
+        Assert.IsNotNull(course.Holes);
+        Assert.Greater(course.Holes.Length, 0);
+
+        currentHoleField.SetValue(_gameMaster, course.Holes.Length - 1);
+
+        // Registers the test ball with GameMaster
+        FieldInfo ballsField = typeof(GameMaster).GetField(
+            "_balls",
+            BindingFlags.NonPublic | BindingFlags.Instance
         );
 
-        startMeasuringTime.Invoke(_ballTimeManager, null);
-        Assert.IsTrue((bool)measureTimeField.GetValue(_ballTimeManager));
-        stopMeasuringTime.Invoke(_ballTimeManager, null);
-        Assert.IsFalse((bool)measureTimeField.GetValue(_ballTimeManager));
+        Assert.IsNotNull(ballsField);
+
+        ballsField.SetValue(
+            _gameMaster,
+            new List<GameObject> { _ball }
+        );
+
+        _ball.GetComponent<BallState>().BallID.Value = 0;
+        _gameMaster.CurrentPlayerTurn.Value = 0;
+
+        // Starts the timer through the ball's turn event
+        _ballMovement.BallTurnBegan?.Invoke();
+
+        yield return new WaitForSeconds(0.5f);
+
+        float timeBeforeGoal = _ballTimeManager.TimeSpentInPlay.Value;
+
+        Assert.Greater(timeBeforeGoal, 0f);
+
+        _gameMaster.HandleGoalRPC(0);
+
+        float stoppedTime = _ballTimeManager.TimeSpentInPlay.Value;
+
+        // Waits to verify that the timer no longer increases
+        yield return new WaitForSeconds(0.5f);
+
+        Assert.AreEqual(
+            stoppedTime,
+            _ballTimeManager.TimeSpentInPlay.Value,
+            0.01f,
+            "The timer continued increasing after completing the final hole."
+        );
+
+        // Verifies that GameMaster advanced beyond the final hole
+        Assert.AreEqual(
+            course.Holes.Length,
+            (int)currentHoleField.GetValue(_gameMaster)
+        );
     }
 
 
