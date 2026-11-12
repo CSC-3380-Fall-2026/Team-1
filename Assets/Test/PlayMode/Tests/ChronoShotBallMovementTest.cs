@@ -1,3 +1,6 @@
+using UnityEditor;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -7,6 +10,8 @@ using UnityEngine;
 public class ChronoShotBallMovementTest
 {
     // References to objects and components for testing
+    GameObject _networkManagerObject;
+    NetworkManager _networkManager;
     GameObject _gameMasterObject;
     GameMaster _gameMaster;
     GameObject _ball;
@@ -19,13 +24,56 @@ public class ChronoShotBallMovementTest
     [SetUp]
     public void SetUp()
     {
-        _gameMasterObject = new GameObject("GameMaster");
-        _gameMaster = _gameMasterObject.AddComponent<GameMaster>();
-        _ball = new GameObject("Ball");
-        _ballRigidbody = _ball.AddComponent<Rigidbody2D>();
-        _ballMovement = _ball.AddComponent<BallMovement>();
+        // Creates the networking transport needed to start a test host
+        _networkManagerObject = new GameObject("Test NetworkManager");
+        UnityTransport transport = _networkManagerObject.AddComponent<UnityTransport>();
+
+        // Creates and configures the NetworkManager for testing
+        _networkManager = _networkManagerObject.AddComponent<NetworkManager>();
+        _networkManager.NetworkConfig = new NetworkConfig();
+        _networkManager.NetworkConfig.NetworkTransport = transport;
+
+        // This will start a local host so the Netcode RPC method can be executed 
+        Assert.IsTrue(_networkManager.StartHost(), "Failed to start the test network host.");
+
+        // Loads the existing GameMaster network prefab
+        GameObject gameMasterPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Level/Prefabs/GameMaster.prefab");
+
+        // Confirms the prefab was loaded successfully
+        Assert.IsNotNull(gameMasterPrefab, "GameMaster prefab could not be loaded.");
+
+        // Creates a GameMaster instance from the prefab 
+        _gameMasterObject = Object.Instantiate(gameMasterPrefab);
+        _gameMaster = _gameMasterObject.GetComponent<GameMaster>();
+        _gameMasterObject.GetComponent<NetworkObject>().Spawn();
+
+        
+        // Loads the existing Ball prefab.
+        GameObject ballPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+            "Assets/Level/Prefabs/Ball.prefab"
+        );
+
+        Assert.IsNotNull(ballPrefab, "Ball prefab could not be loaded.");
+
+        _ball = Object.Instantiate(ballPrefab);
+        _ball.name = "Test Ball";
+
+        _ballRigidbody = _ball.GetComponent<Rigidbody2D>();
+        _ballMovement = _ball.GetComponent<BallMovement>();
+
+        Assert.IsNotNull(_ballRigidbody, "Rigidbody2D component is missing.");
+        Assert.IsNotNull(_ballMovement, "BallMovement component is missing.");
+
+        // Initializes the ball's state for testing.
+        _ballMovement.enabled = false;
         _ballMovement.CurrentGroundState = BallMovement.GroundState.Airborne;
-        _ballMovement.CurrentGroundState = BallMovement.GroundState.Airborne;
+
+        NetworkObject ballNetworkObject = _ball.GetComponent<NetworkObject>();
+
+        Assert.IsNotNull(ballNetworkObject, "NetworkObject component is missing.");
+
+        ballNetworkObject.Spawn();
+
         Time.timeScale = 1.0f;
     }
 
@@ -94,7 +142,23 @@ public class ChronoShotBallMovementTest
     public void TearDown()
     {
         Time.timeScale = 1.0f;
-        GameObject.DestroyImmediate(_ball);
-        GameObject.DestroyImmediate(_gameMasterObject);
+        
+        if (_networkManager != null && _networkManager.IsListening)
+        {
+            _networkManager.Shutdown();
+        }
+
+        if (_ball != null)
+    
+            GameObject.DestroyImmediate(_ball);
+        
+
+        if (_gameMasterObject != null)
+        
+            GameObject.DestroyImmediate(_gameMasterObject);
+        
+        if (_networkManagerObject != null) 
+
+            GameObject.DestroyImmediate(_networkManagerObject);
     }
 }
