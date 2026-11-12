@@ -29,8 +29,6 @@ public class TurnSystemTest
     BallMovement _ballMovement2;
     BallState _ballState1;
     BallState _ballState2;
-    Player _player1;
-    Player _player2;
 
     /// <summary>
     /// This creates the GameMaster, players, and balls used for each turn 
@@ -83,13 +81,31 @@ public class TurnSystemTest
         HoleData holeData = _holeDataObject.AddComponent<HoleData>();
         holeData.enabled = false;
 
-        _resetPoint1 = new GameObject("Test Reset Point 1");
-        _resetPoint1.transform.position = new Vector2(5f, 5f);
-        _resetPoint1.AddComponent<CircleCollider2D>();
+        
+        // Loads the existing reset point prefab
+        GameObject resetPointPrefab =
+            AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Level/Prefabs/Reset Point.prefab"
+            );
 
-        _resetPoint2 = new GameObject("Test Reset Point 2");
+        Assert.IsNotNull(
+            resetPointPrefab,
+            "Reset Point prefab could not be found."
+        );
+
+        // Creates two reset points using the existing prefab
+        _resetPoint1 = UnityEngine.Object.Instantiate(resetPointPrefab);
+        _resetPoint1.name = "Test Reset Point 1";
+        _resetPoint1.transform.position = new Vector2(5f, 5f);
+
+        _resetPoint2 = UnityEngine.Object.Instantiate(resetPointPrefab);
+        _resetPoint2.name = "Test Reset Point 2";
         _resetPoint2.transform.position = new Vector2(10f, 5f);
-        _resetPoint2.AddComponent<CircleCollider2D>();
+
+        // Verifies that both prefab instances have colliders
+        Assert.IsNotNull(_resetPoint1.GetComponent<CircleCollider2D>());
+        Assert.IsNotNull(_resetPoint2.GetComponent<CircleCollider2D>());
+
 
         // Configures the spawn points used by SpawnBallsRPC.
         holeData.ResetLocationObjects = new GameObject[]
@@ -100,29 +116,11 @@ public class TurnSystemTest
 
         holeData.SpawnPointIndices = new int[] { 0, 1 };
 
-        // Initializes Player 1
-        _player1 = new Player();
-        _player1.PlayerName = "Player 1";
-        _player1.PlayerClientID = _networkManager.LocalClientId;
-
-        // Initializes Player 2
-        _player2 = new Player();
-        _player2.PlayerName = "Player 2";
-        _player2.PlayerClientID = _networkManager.LocalClientId;
-
-
+        
         // Registers both players using the game's networking system
-        _gameMaster.AddPlayerRPC(
-            _player1.PlayerName.ToString(),
-            _player1.PlayerClientID,
-            "test-player-1"
-        );
+        _gameMaster.AddPlayerRPC("Player 1", _networkManager.LocalClientId, "test-player-1");
 
-        _gameMaster.AddPlayerRPC(
-            _player2.PlayerName.ToString(),
-            _player2.PlayerClientID,
-            "test-player-2"
-        );
+        _gameMaster.AddPlayerRPC("Player 2", _networkManager.LocalClientId, "test-player-2");
 
         Assert.AreEqual(2, _gameMaster.Players.Count);
 
