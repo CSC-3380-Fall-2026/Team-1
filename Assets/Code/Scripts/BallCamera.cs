@@ -19,11 +19,15 @@ public class BallCamera : MonoBehaviour
     Vector3 _cameraVelocity = Vector3.zero;
 
     // Minimum and maximum zoom levels for the camera
-    [SerializeField] float _minZoom = 5f;
-    [SerializeField] float _maxZoom = 12f;
+    [SerializeField, Tooltip("The minimum zoom level allowed for the camera.")]
+    float _minZoom = 5f;
+
+    [SerializeField, Tooltip("The maximum zoom level allowed for the camera.")]
+    float _maxZoom = 12f;
 
     // This controls how fast the camera can zoom in and out
-    [SerializeField] float _zoomSpeed = 2f;
+    [SerializeField, Tooltip("The speed at which the camera zooms in and out.")]
+    float _zoomSpeed = 2f;
 
     // Stores the desired camera zoom level
     float _targetZoom;
