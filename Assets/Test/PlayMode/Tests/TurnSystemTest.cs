@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine.TestTools;
 using NUnit.Framework;
@@ -6,7 +5,6 @@ using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
-using Unity.Collections;
 
 /// <summary>
 /// Test the multiplayer turn system and verifies that player
@@ -22,6 +20,9 @@ public class TurnSystemTest
     GameObject _networkManagerObject;
     NetworkManager _networkManager;
 
+    GameObject _holeDataObject;
+    GameObject _resetPoint1;
+    GameObject _resetPoint2;
     GameObject _ball1;
     GameObject _ball2;
     BallMovement _ballMovement1;
@@ -76,75 +77,87 @@ public class TurnSystemTest
 
         gameMasterNetworkObject.Spawn();
 
+        // Creates HoleData for the test spawn locations
+        _holeDataObject = new GameObject("Test HoleData");
+
+        HoleData holeData = _holeDataObject.AddComponent<HoleData>();
+        holeData.enabled = false;
+
+        _resetPoint1 = new GameObject("Test Reset Point 1");
+        _resetPoint1.transform.position = new Vector2(5f, 5f);
+        _resetPoint1.AddComponent<CircleCollider2D>();
+
+        _resetPoint2 = new GameObject("Test Reset Point 2");
+        _resetPoint2.transform.position = new Vector2(10f, 5f);
+        _resetPoint2.AddComponent<CircleCollider2D>();
+
+        // Configures the spawn points used by SpawnBallsRPC.
+        holeData.ResetLocationObjects = new GameObject[]
+        {
+            _resetPoint1,
+            _resetPoint2
+        };
+
+        holeData.SpawnPointIndices = new int[] { 0, 1 };
+
         // Initializes Player 1
         _player1 = new Player();
         _player1.PlayerName = "Player 1";
+        _player1.PlayerClientID = _networkManager.LocalClientId;
 
         // Initializes Player 2
         _player2 = new Player();
         _player2.PlayerName = "Player 2";
+        _player2.PlayerClientID = _networkManager.LocalClientId;
 
-        // Loads the existing networked ball prefab
-        GameObject ballPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-            "Assets/Level/Prefabs/Ball.prefab"
+
+        // Registers both players using the game's networking system
+        _gameMaster.AddPlayerRPC(
+            _player1.PlayerName.ToString(),
+            _player1.PlayerClientID,
+            "test-player-1"
         );
 
-        Assert.IsNotNull(ballPrefab, "Ball prefab could not be found.");
+        _gameMaster.AddPlayerRPC(
+            _player2.PlayerName.ToString(),
+            _player2.PlayerClientID,
+            "test-player-2"
+        );
 
-        // Creates Player 1's ball from the prefab
-        _ball1 = UnityEngine.Object.Instantiate(ballPrefab);
-        _ball1.name = "Ball 1";;
+        Assert.AreEqual(2, _gameMaster.Players.Count);
 
-        // Gets Player 1's existing prefab components
+        // Spawns both player balls using the game's networking system
+        _gameMaster.SpawnBallsRPC();
+
+        // Verifies that both balls were registered
+        Assert.AreEqual(2, _gameMaster.Balls.Count, "GameMaster should contain exactly two spawned balls.");
+
+        // Retrieves the automatically spawned balls
+        _ball1 = _gameMaster.Balls[0];
+        _ball2 = _gameMaster.Balls[1];
+
+        Assert.IsNotNull(_ball1);
+        Assert.IsNotNull(_ball2);
+
+        // Retrieves each ball's movement and state components
         _ballMovement1 = _ball1.GetComponent<BallMovement>();
-        _ballState1 = _ball1.GetComponent<BallState>();
-
-        Assert.IsNotNull(_ballMovement1, "Player 1 BallMovement is missing.");
-        Assert.IsNotNull(_ballState1, "Player 1 BallState is missing.");
-
-        // Creates Player 2's ball from the existing networked prefab
-        _ball2 = UnityEngine.Object.Instantiate(ballPrefab);
-        _ball2.name = "Ball 2";
-
-        // Gets Player 2's existing prefab components
         _ballMovement2 = _ball2.GetComponent<BallMovement>();
+
+        _ballState1 = _ball1.GetComponent<BallState>();
         _ballState2 = _ball2.GetComponent<BallState>();
 
-        Assert.IsNotNull(_ballMovement2, "Player 2 BallMovement is missing.");
-        Assert.IsNotNull(_ballState2, "Player 2 BallState is missing.");
+        Assert.IsNotNull(_ballMovement1);
+        Assert.IsNotNull(_ballMovement2);
+        Assert.IsNotNull(_ballState1);
+        Assert.IsNotNull(_ballState2);
 
-        // Spawns both test balls on the network
-        _ball1.GetComponent<NetworkObject>().Spawn();
-        _ball2.GetComponent<NetworkObject>().Spawn();
+        // Verifies that the correct player IDs were assigned
+        Assert.AreEqual(0, _ballState1.BallID.Value);
+        Assert.AreEqual(1, _ballState2.BallID.Value);
 
-        // Assigns player information after both networked balls are spawned
-        _ballState1.BallID.Value = 0;
-        _ballState1.PlayerName.Value = _player1.PlayerName;
+        // Verifies the initial turn
+        Assert.AreEqual(0, _gameMaster.CurrentPlayerTurn.Value);
 
-        _ballState2.BallID.Value = 1;
-        _ballState2.PlayerName.Value = _player2.PlayerName;
-
-        // Gets access to the GameMaster's private ball list for testing
-        FieldInfo ballsField = typeof(GameMaster).GetField(
-            "_balls", BindingFlags.NonPublic | BindingFlags.Instance
-        );
-
-        Assert.IsNotNull(ballsField, "GameMaster ball list could not be found.");
-
-        ballsField.SetValue(
-            _gameMaster,
-            new List<GameObject> { _ball1, _ball2 }
-        );
-
-        // Registers both players with the networked turn system
-        _gameMaster.Players.Add(_player1);
-        _gameMaster.Players.Add(_player2);
-
-        // Sets Player 1 as the current player
-        _gameMaster.CurrentPlayerTurn.Value = 0;
-
-        _ballMovement1.enabled = true;
-        _ballMovement2.enabled = false;
     }
 
     /// <summary>
@@ -189,9 +202,14 @@ public class TurnSystemTest
         if (_networkManagerObject != null)
             UnityEngine.Object.DestroyImmediate(_networkManagerObject);
 
-        // Restores normal time settings
-        Time.timeScale = 1.0f;
-        Time.fixedDeltaTime = 0.02f;
+        if (_resetPoint1 != null)
+            UnityEngine.Object.DestroyImmediate(_resetPoint1);
+
+        if (_resetPoint2 != null)
+            UnityEngine.Object.DestroyImmediate(_resetPoint2);
+
+        if (_holeDataObject != null)
+            UnityEngine.Object.DestroyImmediate(_holeDataObject);
     }
 
     /// <summary>

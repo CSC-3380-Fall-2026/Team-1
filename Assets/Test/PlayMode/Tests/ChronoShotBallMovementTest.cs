@@ -47,10 +47,33 @@ public class ChronoShotBallMovementTest
         _gameMaster = _gameMasterObject.GetComponent<GameMaster>();
         _gameMasterObject.GetComponent<NetworkObject>().Spawn();
 
-        _ball = new GameObject("Ball");
-        _ballRigidbody = _ball.AddComponent<Rigidbody2D>();
-        _ballMovement = _ball.AddComponent<BallMovement>();
+        
+        // Loads the existing Ball prefab.
+        GameObject ballPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+            "Assets/Level/Prefabs/Ball.prefab"
+        );
+
+        Assert.IsNotNull(ballPrefab, "Ball prefab could not be loaded.");
+
+        _ball = Object.Instantiate(ballPrefab);
+        _ball.name = "Test Ball";
+
+        _ballRigidbody = _ball.GetComponent<Rigidbody2D>();
+        _ballMovement = _ball.GetComponent<BallMovement>();
+
+        Assert.IsNotNull(_ballRigidbody, "Rigidbody2D component is missing.");
+        Assert.IsNotNull(_ballMovement, "BallMovement component is missing.");
+
+        // Initializes the ball's state for testing.
+        _ballMovement.enabled = false;
         _ballMovement.CurrentGroundState = BallMovement.GroundState.Airborne;
+
+        NetworkObject ballNetworkObject = _ball.GetComponent<NetworkObject>();
+
+        Assert.IsNotNull(ballNetworkObject, "NetworkObject component is missing.");
+
+        ballNetworkObject.Spawn();
+
         Time.timeScale = 1.0f;
     }
 

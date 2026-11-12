@@ -20,7 +20,6 @@ public class TimeDilationTest
     /// <summary>
     /// Creates a temporary GameMaster and restores normal time before each test.
     /// </summary>
-
     [SetUp]
     public void SetUp()
     {
@@ -67,7 +66,6 @@ public class TimeDilationTest
     /// <summary>
     /// Removes the temporary GameMaster after each test.
     /// </summary>
-
     [TearDown]
     public void TearDown()
     {
@@ -85,15 +83,11 @@ public class TimeDilationTest
         {
             UnityEngine.Object.DestroyImmediate(_networkManagerObject);
         }
-
-        Time.timeScale = 1.0f;
-        Time.fixedDeltaTime = 0.02f;
     }
 
     /// <summary>
     /// Verifies that the game begins at normal time speed.
     /// </summary>
-
     [Test]
     public void GameStartAtNormalTimeSpeed()
     {
@@ -103,7 +97,6 @@ public class TimeDilationTest
     /// <summary>
     /// Verifies that setting a slower time rate activates slow motion.
     /// </summary>
-
     [Test]
     public void SetTimeRateSlowsGame()
     {
@@ -114,7 +107,6 @@ public class TimeDilationTest
     /// <summary>
     /// Verifies that the normal time rate is restored after slow motion ends.
     /// </summary>
-
     [Test]
     public void SetTimeRateRestoreNormalSpeed()
     {
@@ -128,7 +120,6 @@ public class TimeDilationTest
     /// Verifies that Chronoshot changes from active slow motion back to its inactive
     /// normal time state.
     /// </summary>
-
     [Test]
     public void ChronoShotChangesActiveAndInactiveState()
     {

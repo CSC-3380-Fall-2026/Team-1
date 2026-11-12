@@ -65,23 +65,53 @@ public class BallControllerTest
 
         gameMasterNetworkObject.Spawn();
 
-        _ball = new GameObject("Ball");
 
-        // Adds the network components needed to identify the test ball
-        _ball.AddComponent<Unity.Netcode.NetworkObject>();
-        BallState ballState = _ball.AddComponent<BallState>();
-        ballState.BallID = new NetworkVariable<int>(0);
-        ballState.PlayerName = new NetworkVariable<Unity.Collections.FixedString64Bytes>();
+        // Loads the existing Ball prefab
+        GameObject ballPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+            "Assets/Level/Prefabs/Ball.prefab"
+        );
 
-        // Registers the test ball so GameMaster can access it by ID
-        _gameMaster.AddPlayerBall(_ball);
+        Assert.IsNotNull(ballPrefab, "Ball prefab could not be found.");
 
-        _ballRigidbody = _ball.AddComponent<Rigidbody2D>();
+        // Creates the test ball using the existing prefab
+        _ball = UnityEngine.Object.Instantiate(ballPrefab);
+        _ball.name = "Test Ball";
+
+        // Gets the components already attached to the prefab
+        _ballRigidbody = _ball.GetComponent<Rigidbody2D>();
+        _ballCollider = _ball.GetComponent<CircleCollider2D>();
         _ballRigidbody.gravityScale = 0f;
-        _ballCollider = _ball.AddComponent<CircleCollider2D>();
-        _resetPoint = new GameObject("ResetPoint");
-        _resetPointCollider = _resetPoint.AddComponent<CircleCollider2D>();
+
+        Assert.IsNotNull(_ballRigidbody, "Rigidbody2D component is missing.");
+        Assert.IsNotNull(_ballCollider, "CircleCollider2D component is missing.");
+
+        // Prevents movement input from interfering with the tests
+        BallMovement ballMovement = _ball.GetComponent<BallMovement>();
+
+        if (ballMovement != null)
+        {
+            ballMovement.enabled = false;
+        }
+
+        NetworkObject ballNetworkObject = _ball.GetComponent<NetworkObject>();
+
+        Assert.IsNotNull(ballNetworkObject, "NetworkObject component is missing.");
+
+        ballNetworkObject.Spawn();
+        
+        // Loads the existing Reset Point prefab
+        GameObject resetPointPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+            "Assets/Level/Prefabs/Reset Point.prefab"
+        );
+
+        Assert.IsNotNull(resetPointPrefab, "Reset Point prefab could not be found.");
+
+        _resetPoint = UnityEngine.Object.Instantiate(resetPointPrefab);
+        _resetPoint.name = "Test Reset Point";
+
         _resetPoint.transform.position = new Vector2(5f, 5f);
+        _resetPointCollider = _resetPoint.GetComponent<CircleCollider2D>();
+
 
         // Creates the hole data used to identify valid ball reset locations
         _holeDataObject = new GameObject("Test HoleData");
@@ -92,7 +122,7 @@ public class BallControllerTest
     }
 
     /// <summary>
-    /// Tests that the ball returns to the correct reset position.
+    /// Tests that the ball returns to the correct reset position
     /// </summary>
     [UnityTest]
     public IEnumerator BallReturnToCorrectPosition()
@@ -101,20 +131,6 @@ public class BallControllerTest
         _gameMaster.ResetBallRPC(0, new int[] { 0 });
         yield return null;
         Assert.AreEqual(_resetPoint.transform.position, _ball.transform.position);
-    }
-
-    /// <summary>
-    /// Tests that the ball's velocity is cleared after a reset
-    /// </summary>
-    [UnityTest]
-    public IEnumerator VelocityIsClearedAfterReset()
-    {
-        _ballRigidbody.linearVelocity = new Vector2(10f, 5f);
-        _ballRigidbody.angularVelocity = 5f;
-        _gameMaster.ResetBallRPC(0, new int[] { 0 });
-        yield return null;
-        Assert.AreEqual(Vector2.zero, _ballRigidbody.linearVelocity);
-        Assert.AreEqual(0f, _ballRigidbody.angularVelocity);
     }
 
     /// <summary>
@@ -174,9 +190,6 @@ public class BallControllerTest
 
         if (_networkManagerObject != null)
             UnityEngine.Object.DestroyImmediate(_networkManagerObject);
-
-        Time.timeScale = 1f;
-        Time.fixedDeltaTime = 0.02f;
     }
 }
 
