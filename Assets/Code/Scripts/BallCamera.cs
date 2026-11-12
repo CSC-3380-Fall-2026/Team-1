@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// This will control the gameplay camera and follows the ball belonging to
@@ -16,6 +17,20 @@ public class BallCamera : MonoBehaviour
 
     // Stores the current velocity used to SmoothDamp
     Vector3 _cameraVelocity = Vector3.zero;
+
+    // Minimum and maximum zoom levels for the camera
+    [SerializeField, Tooltip("The minimum zoom level allowed for the camera.")]
+    float _minZoom = 5f;
+
+    [SerializeField, Tooltip("The maximum zoom level allowed for the camera.")]
+    float _maxZoom = 12f;
+
+    // This controls how fast the camera can zoom in and out
+    [SerializeField, Tooltip("The speed at which the camera zooms in and out.")]
+    float _zoomSpeed = 2f;
+
+    // Stores the desired camera zoom level
+    float _targetZoom;
 
     /// <summary>
     /// This will find the ball belonging to the player whose turn is currently 
@@ -84,6 +99,8 @@ public class BallCamera : MonoBehaviour
     /// </summary>
     void Start()
     {
+        _targetZoom = 5f;
+        GetComponent<Camera>().orthographicSize = _targetZoom;
         NetworkManager.Singleton.OnClientConnectedCallback += HandleClientConnected;
     }
 
@@ -99,6 +116,20 @@ public class BallCamera : MonoBehaviour
             _targetBall = null;
             UpdateCameraTarget();
         }
+    }
+    /// <summary>
+    /// Haldes the camera zoom using the mouse scroll wheel
+    /// </summary>
+    void Update()
+    {
+        float scroll = Mouse.current != null ? Mouse.current.scroll.ReadValue().y : 0f;
+
+        // Updates zoom and keep it between 5 and 12
+        _targetZoom = Mathf.Clamp(_targetZoom - scroll * _zoomSpeed * 0.01f, _minZoom, _maxZoom);
+
+        // Smoothly adjusts the camera's zoom
+        Camera camera = GetComponent<Camera>();
+        camera.orthographicSize = Mathf.Lerp(camera.orthographicSize, _targetZoom, Time.deltaTime * 5f);
     }
 
     /// <summary>
