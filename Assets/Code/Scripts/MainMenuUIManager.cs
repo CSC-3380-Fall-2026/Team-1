@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SocialPlatforms;
 using UnityEngine.UIElements;
 
 /// <summary>
@@ -60,9 +59,10 @@ public class MainMenuUIManager : MonoBehaviour
         quitButton.RegisterCallback<ClickEvent>(HandleQuitButtonClicked);
 
         // Starting or joining a game should only be allowed if at least one player profile has been made.
-        singlePlayerButton.SetEnabled(LocalGameData.Instance.PlayerProfiles.Count > 0);
-        hostLANGameButton.SetEnabled(LocalGameData.Instance.PlayerProfiles.Count > 0);
-        joinLANGameButton.SetEnabled(LocalGameData.Instance.PlayerProfiles.Count > 0);
+        bool enablePlayButtons = LocalGameData.Instance.PlayerProfiles.Count > 0;
+        singlePlayerButton.SetEnabled(enablePlayButtons);
+        hostLANGameButton.SetEnabled(enablePlayButtons);
+        joinLANGameButton.SetEnabled(enablePlayButtons);
     }
 
     void HandleSingleplayerButtonClicked(ClickEvent clickEventInfo)

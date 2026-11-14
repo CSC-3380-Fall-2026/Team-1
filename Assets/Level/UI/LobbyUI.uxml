@@ -1,13 +1,24 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <ui:VisualElement name="LobbyRootVisualElement" style="flex-grow: 1; background-color: rgb(166, 166, 166);">
         <ui:Label text="Lobby" name="LobbyTitleLabel" style="position: absolute; flex-grow: 1; flex-shrink: 1; align-self: center; width: 100%; height: auto; font-size: 40px; -unity-text-align: middle-center;"/>
-        <ui:ScrollView name="ClientsListScrollView" horizontal-scroller-visibility="Hidden" style="min-width: 30%; align-self: center; min-height: 50%; position: absolute; top: 25%; right: 65%; max-width: 30%; background-color: rgba(51, 51, 51, 0.784); max-height: 50%;"/>
-        <ui:ScrollView name="PlayersListScrollView" horizontal-scroller-visibility="Hidden" style="min-width: 55%; min-height: 50%; max-width: 55%; max-height: 50px; align-self: center; top: 25%; position: absolute; left: 40%; right: 0; bottom: 0; align-items: stretch; background-color: rgba(51, 51, 51, 0.784);"/>
-        <ui:VisualElement name="StartExitContainer" style="flex-grow: 1; top: 80%; min-width: 55%; max-width: 55%; max-height: 15%; min-height: 15%; align-self: center; bottom: auto; flex-direction: row; align-content: auto; justify-content: space-evenly; left: 40%; position: absolute;">
+        <ui:VisualElement name="ClientsPlayersListsContainerVisualElement" style="flex-grow: 1; position: absolute; top: 25%; right: 55%; min-width: 40%; max-width: 40%; min-height: 50%; max-height: 50%; justify-content: space-around;">
+            <ui:ScrollView name="ClientsListScrollView" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="AlwaysVisible" style="min-width: 100%; align-self: center; min-height: 47.5%; max-width: 100%; background-color: rgba(51, 51, 51, 0.784); max-height: 100%; height: auto; flex-grow: 1;"/>
+            <ui:VisualElement name="ClientsPlayersListsMarginVisualElement" style="flex-grow: 1; min-width: 100%; max-width: 100%; min-height: 5%; max-height: 5%;"/>
+            <ui:ScrollView name="PlayersListScrollView" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="AlwaysVisible" style="min-width: 100%; min-height: 47.5%; max-width: 100%; max-height: 100%; align-self: center; align-items: stretch; background-color: rgba(51, 51, 51, 0.784); flex-grow: 1;"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="CourseInfoVisualElement" style="flex-grow: 1; position: absolute; min-width: 45%; max-width: 45%; min-height: 50%; max-height: 50%; left: 50%; top: 25%;">
+            <ui:DropdownField label="" index="0" name="CourseSelectDropdown"/>
+            <ui:ScrollView name="CoursePreviewImagesScrollview" mode="Horizontal" horizontal-scroller-visibility="AlwaysVisible" vertical-scroller-visibility="Hidden" style="min-height: 45%; flex-shrink: 0;"/>
+            <ui:ScrollView name="CourseDescriptionScrollView" horizontal-scroller-visibility="Hidden" style="min-height: 35%;">
+                <ui:Label text="Course Description" name="CourseDescriptionLabel" style="min-height: auto; white-space: normal;"/>
+            </ui:ScrollView>
+            <ui:Label text="Maximum Number of Players: #" name="MaxPlayersLabel"/>
+        </ui:VisualElement>
+        <ui:VisualElement name="StartExitContainer" style="flex-grow: 1; top: 80%; min-width: 45%; max-width: 45%; max-height: 15%; min-height: 15%; align-self: center; bottom: auto; flex-direction: row; align-content: auto; justify-content: space-evenly; left: 50%; position: absolute;">
             <ui:Button text="Start Game&#10;" name="StartGameButton" style="min-width: 30%; max-width: 30%;"/>
             <ui:Button text="Exit Game" name="ExitGameButton" style="min-width: 30%; max-width: 30%;"/>
         </ui:VisualElement>
-        <ui:VisualElement name="AddPlayerProfileContainer" style="flex-grow: 1; align-self: center; min-width: 30%; max-width: 30%; right: 65%; position: absolute; min-height: 15%; max-height: 15%; top: 80%; flex-direction: row; justify-content: space-around;">
+        <ui:VisualElement name="AddPlayerProfileContainer" style="flex-grow: 1; align-self: center; min-width: 40%; max-width: 40%; right: 55%; position: absolute; min-height: 15%; max-height: 15%; top: 80%; flex-direction: row; justify-content: space-around;">
             <ui:DropdownField label="" name="AddPlayerProfileDropdownField" style="min-width: 65%; max-width: 65%;"/>
             <ui:Button text="Add&#10;Player" name="AddPlayerProfileButton" style="min-width: 25%; max-width: 25%; white-space: nowrap; text-overflow: clip;"/>
         </ui:VisualElement>
