@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -11,6 +10,14 @@ public class MainMenuUIManager : MonoBehaviour
     // A reference to the UXML file containing the UI of the first menu displayed in the game.
     [SerializeField, Tooltip("The UXML file containing the initial menu's UI.")]
     VisualTreeAsset _mainMenuUIAsset;
+
+    // A reference to the UXML file containing the UI of the settings menu.
+    [SerializeField, Tooltip("The UXML file containing the settings menu UI.")]
+    VisualTreeAsset _manageProfilesUIAsset;
+
+    // A reference to the UXML file containing the UI of the settings menu.
+    [SerializeField, Tooltip("The UXML file containing the settings menu UI.")]
+    VisualTreeAsset _settingsMenuUIAsset;
 
     // A reference to the UI Document component on the main menu's UI manager.
     // Changing the source asset changes the UI displayed.
@@ -38,29 +45,32 @@ public class MainMenuUIManager : MonoBehaviour
     /// </summary>
     void ShowMainMenu()
     {
-        // Removes any click event handlers registered to any buttons in the previously shown UI.
-        UnregisterUIElementEventHandlers();
-
         // Tells the UI document component to display the main menu's UI.
         _UIDocumentComponent.visualTreeAsset = _mainMenuUIAsset;
 
         // Each button needs to be pointed at a function to execute when it is clicked.
+        // Unregister to avoid duplicates; does nothing if not subcribed before.
         Button singlePlayerButton = _UIDocumentComponent.rootVisualElement.Query<Button>("SingleplayerButton");
+        singlePlayerButton.UnregisterCallback<ClickEvent>(HandleSingleplayerButtonClicked);
         singlePlayerButton.RegisterCallback<ClickEvent>(HandleSingleplayerButtonClicked);
 
         Button hostLANGameButton = _UIDocumentComponent.rootVisualElement.Query<Button>("HostLANGameButton");
+        hostLANGameButton.UnregisterCallback<ClickEvent>(HandleHostLANGameButtonClicked);
         hostLANGameButton.RegisterCallback<ClickEvent>(HandleHostLANGameButtonClicked);
 
         Button joinLANGameButton = _UIDocumentComponent.rootVisualElement.Query<Button>("JoinLANGameButton");
+        joinLANGameButton.UnregisterCallback<ClickEvent>(HandleJoinLANGameButtonClicked);
         joinLANGameButton.RegisterCallback<ClickEvent>(HandleJoinLANGameButtonClicked);
 
         Button managePlayerProfilesButton = _UIDocumentComponent.rootVisualElement.Query<Button>("ManagePlayerProfilesButton");
         managePlayerProfilesButton.RegisterCallback<ClickEvent>(HandleManagePlayerProfilesButtonClicked);
 
         Button settingsButton = _UIDocumentComponent.rootVisualElement.Query<Button>("SettingsButton");
+        settingsButton.UnregisterCallback<ClickEvent>(HandleSettingsButtonClicked);
         settingsButton.RegisterCallback<ClickEvent>(HandleSettingsButtonClicked);
 
         Button quitButton = _UIDocumentComponent.rootVisualElement.Query<Button>("QuitButton");
+        quitButton.UnregisterCallback<ClickEvent>(HandleQuitButtonClicked);
         quitButton.RegisterCallback<ClickEvent>(HandleQuitButtonClicked);
 
         // Starting or joining a game should only be allowed if at least one player profile has been made.
@@ -94,13 +104,20 @@ public class MainMenuUIManager : MonoBehaviour
         Button joinConfirmButton = _UIDocumentComponent.rootVisualElement.Query<Button>("JoinConfirmButton");
 
         // Subscribes/unsubscribes from relevant functions based on supplied information.
+        // Unsubscribes before subscribing to avoid duplicate registration.
         if (show && hosting)
         {
+            hostCancelButton.UnregisterCallback<ClickEvent>(HandleCancelButtonClicked);
             hostCancelButton.RegisterCallback<ClickEvent>(HandleCancelButtonClicked);
+
+            hostConfirmButton.UnregisterCallback<ClickEvent>(HandleConfirmButtonClicked);
             hostConfirmButton.RegisterCallback<ClickEvent>(HandleConfirmButtonClicked);
         } else if (show && !hosting)
         {
+            joinCancelButton.UnregisterCallback<ClickEvent>(HandleCancelButtonClicked);
             joinCancelButton.RegisterCallback<ClickEvent>(HandleCancelButtonClicked);
+
+            joinConfirmButton.UnregisterCallback<ClickEvent>(HandleConfirmButtonClicked);
             joinConfirmButton.RegisterCallback<ClickEvent>(HandleConfirmButtonClicked);
         } else
         {
@@ -112,6 +129,38 @@ public class MainMenuUIManager : MonoBehaviour
 
         // The callbacks need this information to let the LobbyManager know whether to join or host a game.
         _hosting = hosting;
+    }
+
+    /// <summary>
+    /// Handles displaying the manage profiles menu UI.
+    /// Registers click event callbacks as well.
+    /// </summary>
+    void ShowManageProfilesMenu()
+    {
+        // Changes the displayed UI asset to the 'manage profiles' UXML file.
+        _UIDocumentComponent.visualTreeAsset = _manageProfilesUIAsset;
+
+        // Subscribes to the click events of buttons in the settings menu.
+        // Unsubscribes first to avoid duplicate registration.
+        Button backToMainMenuButton = _UIDocumentComponent.rootVisualElement.Query<Button>("BackToMainMenuButton");
+        backToMainMenuButton.UnregisterCallback<ClickEvent>(HandleBackToMainMenuButtonClicked);
+        backToMainMenuButton.RegisterCallback<ClickEvent>(HandleBackToMainMenuButtonClicked);
+    }
+
+    /// <summary>
+    /// Handles displaying the settings menu UI.
+    /// Registers click event callbacks as well.
+    /// </summary>
+    void ShowSettingsMenu()
+    {
+        // Changes the displayed UI asset to the settings UXML file.
+        _UIDocumentComponent.visualTreeAsset = _settingsMenuUIAsset;
+
+        // Subscribes to the click events of buttons in the settings menu.
+        // Unsubscribes first to avoid duplicate registration.
+        Button backToMainMenuButton = _UIDocumentComponent.rootVisualElement.Query<Button>("BackToMainMenuButton");
+        backToMainMenuButton.UnregisterCallback<ClickEvent>(HandleBackToMainMenuButtonClicked);
+        backToMainMenuButton.RegisterCallback<ClickEvent>(HandleBackToMainMenuButtonClicked);
     }
 
     /// <summary>
@@ -176,14 +225,24 @@ public class MainMenuUIManager : MonoBehaviour
             LobbyManager.Instance.ConnectToHost(ipAddressTextField.text, joinPortIntegerField.text);
     }
 
+    /// <summary>
+    /// This function is called when the "Manage Player Profiles" button is clicked in the input UI.
+    /// Changes the menu being displayed to the manage profiles menu.
+    /// </summary>
+    /// <param name="clickEventInfo">Contains information about the button click event.</param>
     void HandleManagePlayerProfilesButtonClicked(ClickEvent clickEventInfo)
     {
-        
+        ShowManageProfilesMenu();
     }
 
+    /// <summary>
+    /// This function is called when the settings button in the main menu is clicked.
+    /// Unloads the main menu UI and loads the settings UI.
+    /// </summary>
+    /// <param name="clickEventInfo">Contains information about the click event.</param>
     void HandleSettingsButtonClicked(ClickEvent clickEventInfo)
     {
-        
+        ShowSettingsMenu();
     }
 
     /// <summary>
@@ -194,6 +253,17 @@ public class MainMenuUIManager : MonoBehaviour
     void HandleQuitButtonClicked(ClickEvent clickEventInfo)
     {
         Application.Quit();
+    }
+
+    /// <summary>
+    /// This funnction is called when a button in the UI intended to lead back to the main menu is clicked.
+    /// Unloads the UI of the current menu and loads the main menu's UI.
+    /// It will be used in multiple different menus, as its functionality is quite generic. 
+    /// </summary>
+    /// <param name="clickEventInfo"></param>
+    void HandleBackToMainMenuButtonClicked(ClickEvent clickEventInfo)
+    {
+        ShowMainMenu();
     }
 
     /// <summary>
