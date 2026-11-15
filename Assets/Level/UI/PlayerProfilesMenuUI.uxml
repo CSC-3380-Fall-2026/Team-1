@@ -1,0 +1,12 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="PlayerProfilesMenuRoot" style="flex-grow: 1; background-color: rgb(166, 166, 166);">
+        <ui:Label text="Manage Player Profiles" name="PlayerProfilesTitleLabel" style="align-self: auto; -unity-font-style: bold; font-size: 32px; -unity-text-align: upper-center; top: 5%;"/>
+        <ui:VisualElement name="ProfileEditContent" style="flex-grow: 1; min-width: 80%; max-width: 80%; align-self: center; min-height: 50%; max-height: 50%; top: 10%; background-color: rgba(51, 51, 51, 0.784);"/>
+        <ui:VisualElement name="ProfileEditAndMenuContainer" style="flex-grow: 1; min-height: 15%; max-height: 15%; position: absolute; top: 75%; min-width: 80%; align-self: center; flex-direction: row; justify-content: space-between;">
+            <ui:DropdownField label="" name="ProfileSelectDropdownField" style="min-width: 50%;"/>
+            <ui:Button text="Add" name="AddProfileButton" style="min-width: 15%; max-width: 15%;"/>
+            <ui:Button text="Delete" name="DeleteProfileButton" style="min-width: 15%; max-width: 15%;"/>
+            <ui:Button text="Main Menu" name="BackToMainMenuButton" style="min-width: 15%; max-width: 15%;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

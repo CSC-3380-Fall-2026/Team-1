@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -11,6 +10,10 @@ public class MainMenuUIManager : MonoBehaviour
     // A reference to the UXML file containing the UI of the first menu displayed in the game.
     [SerializeField, Tooltip("The UXML file containing the initial menu's UI.")]
     VisualTreeAsset _mainMenuUIAsset;
+
+    // A reference to the UXML file containing the UI of the settings menu.
+    [SerializeField, Tooltip("The UXML file containing the settings menu UI.")]
+    VisualTreeAsset _manageProfilesUIAsset;
 
     // A reference to the UXML file containing the UI of the settings menu.
     [SerializeField, Tooltip("The UXML file containing the settings menu UI.")]
@@ -129,6 +132,22 @@ public class MainMenuUIManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Handles displaying the manage profiles menu UI.
+    /// Registers click event callbacks as well.
+    /// </summary>
+    void ShowManageProfilesMenu()
+    {
+        // Changes the displayed UI asset to the 'manage profiles' UXML file.
+        _UIDocumentComponent.visualTreeAsset = _manageProfilesUIAsset;
+
+        // Subscribes to the click events of buttons in the settings menu.
+        // Unsubscribes first to avoid duplicate registration.
+        Button backToMainMenuButton = _UIDocumentComponent.rootVisualElement.Query<Button>("BackToMainMenuButton");
+        backToMainMenuButton.UnregisterCallback<ClickEvent>(HandleBackToMainMenuButtonClicked);
+        backToMainMenuButton.RegisterCallback<ClickEvent>(HandleBackToMainMenuButtonClicked);
+    }
+
+    /// <summary>
     /// Handles displaying the settings menu UI.
     /// Registers click event callbacks as well.
     /// </summary>
@@ -206,9 +225,14 @@ public class MainMenuUIManager : MonoBehaviour
             LobbyManager.Instance.ConnectToHost(ipAddressTextField.text, joinPortIntegerField.text);
     }
 
+    /// <summary>
+    /// This function is called when the "Manage Player Profiles" button is clicked in the input UI.
+    /// Changes the menu being displayed to the manage profiles menu.
+    /// </summary>
+    /// <param name="clickEventInfo">Contains information about the button click event.</param>
     void HandleManagePlayerProfilesButtonClicked(ClickEvent clickEventInfo)
     {
-        
+        ShowManageProfilesMenu();
     }
 
     /// <summary>
