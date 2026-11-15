@@ -1,0 +1,10 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="SettingsMenuRoot" style="flex-grow: 1; background-color: rgb(166, 166, 166);">
+        <ui:Label text="Settings" name="SettingsTitleLabel" style="-unity-text-align: middle-center; -unity-font-style: bold; font-size: 32px; top: 5%;"/>
+        <ui:ScrollView name="SettingsOptionsScrollView" style="width: 80%; height: 60%; align-self: center; top: 10%; background-color: rgba(51, 51, 51, 0.784);"/>
+        <ui:VisualElement name="BackSaveButtonsContainer" style="flex-grow: 1; width: 80%; align-self: center; height: auto; max-height: 15%; top: 15%; flex-direction: row; justify-content: space-around;">
+            <ui:Button text="Back to Main Menu" name="BackToMainMenuButton" style="min-width: 45%;"/>
+            <ui:Button text="Save Changes" name="SaveButton" style="min-width: 45%;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
