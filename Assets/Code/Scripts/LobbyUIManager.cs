@@ -1,3 +1,4 @@
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -49,6 +50,19 @@ public class LobbyUIManager : MonoBehaviour
             // Links the disconnect button to disconnect functionality.
             Button disconnectButton = disconnectButtonContainer.Query<Button>("DisconnectButton");
             disconnectButton.RegisterCallback<ClickEvent>(HandleDisconnectButtonClicked);
+
+            // Hides the course-selection dropdown menu and registers change event handler
+            DropdownField courseSelectDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("CourseSelectDropdownField");
+            courseSelectDropdownField.style.display = DisplayStyle.None;
+
+            // Displays the course-selection label
+            Label courseSelectionLabel = _UIDocumentComponent.rootVisualElement.Query<Label>("CourseSelectionLabel");
+            courseSelectionLabel.style.display = DisplayStyle.Flex;
+        } else
+        {
+            // Registers the course selection dropdown field's change event handler
+            DropdownField courseSelectDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("CourseSelectDropdownField");
+            courseSelectDropdownField.RegisterValueChangedCallback(HandleCourseSelectionChanged);
         }
 
         // General button function registry.
@@ -60,6 +74,16 @@ public class LobbyUIManager : MonoBehaviour
 
         Button exitGameButton = _UIDocumentComponent.rootVisualElement.Query<Button>("ExitGameButton");
         exitGameButton.RegisterCallback<ClickEvent>(HandleDisconnectButtonClicked);
+
+        // Hides the clients list if the game is in singleplayer mode.
+        if (LobbyManager.Instance.IsSingleplayer)
+        {
+            ScrollView clientsListScrollView = _UIDocumentComponent.rootVisualElement.Query<ScrollView>("ClientsListScrollView");
+            clientsListScrollView.style.display = DisplayStyle.None;
+
+            VisualElement clientsPlayersListMarginVisualElement = _UIDocumentComponent.rootVisualElement.Query("ClientsPlayersListsMarginVisualElement");
+            clientsPlayersListMarginVisualElement.style.display = DisplayStyle.None;
+        }
     }
 
     /// <summary>
@@ -74,10 +98,15 @@ public class LobbyUIManager : MonoBehaviour
         // OnListChanged is raised whenever the players list changes.
         GameMaster.Instance.Players.OnListChanged += HandlePlayerListChangedEvent;
 
+        // OnValueChanged is raised whenever the host selects a new course from the UI's dropdown.
+        GameMaster.Instance.CurrentCourseName.OnValueChanged += ConstructCourseInfoUI;
+
         // These are not called when first subscribed, so need to be called manually.
         ConstructClientsListUI();
         ConstructPlayersListUI();
         ConstructPlayerProfilesListUI();
+        ConstructCourseSelectionListUI();
+        ConstructCourseInfoUI();
     }
 
     /// <summary>
@@ -193,6 +222,95 @@ public class LobbyUIManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Adds every course in LocalGameData to the list of courses in the UI.
+    /// </summary>
+    void ConstructCourseSelectionListUI()
+    {
+        if (!NetworkManager.Singleton.IsHost)
+            return;
+
+        // Have to clear the list before adding anything new.
+        DropdownField courseSelectDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("CourseSelectDropdownField");
+        courseSelectDropdownField.choices.Clear();
+
+        // The selected value of the dropdown should be that of the currently selected course.
+        int currentCourseIndex = 0;
+
+        // Adds every course in the LocalGameData's list.
+        for (int i = 0; i < LocalGameData.Instance.Courses.Length; i++)
+        {
+            string courseName = LocalGameData.Instance.Courses[i].CourseName;
+            courseSelectDropdownField.choices.Add(courseName);
+
+            // Stores index with same name as the current so the dropdown's current selection can be changed to it.
+            if (GameMaster.Instance.CurrentCourseName.Value != null && courseName == GameMaster.Instance.CurrentCourseName.Value)
+                currentCourseIndex = i;
+        }
+
+        courseSelectDropdownField.index = currentCourseIndex;
+
+        // Changing the current course is an involved process, so a function is used rather than setting directly.
+        GameMaster.Instance.SetCourse(LocalGameData.Instance.Courses[currentCourseIndex]);
+    }
+
+    /// <summary>
+    /// Fills the lobby UI with information about the current course.
+    /// This function is called whenever the current course value in the GameMaster changes.
+    /// </summary>
+    /// <param name="oldCourseName">The name of the previous course selected.</param>
+    /// <param name="newCourseName">The name of the now-current course selected.</param>
+    void ConstructCourseInfoUI(FixedString64Bytes oldCourseName = default(FixedString64Bytes), FixedString64Bytes newCourseName = default(FixedString64Bytes))
+    {
+        // Sets the course name label (only seen by client) to the host's selected course.
+        if (!NetworkManager.Singleton.IsHost)
+        {
+            Label courseSelectionLabel = _UIDocumentComponent.rootVisualElement.Query<Label>("CourseSelectionLabel");
+            courseSelectionLabel.text = GameMaster.Instance.CurrentCourseName.Value.ToString();
+        }
+
+        // Adds the course's image previews to the UI.
+        // Needs changing to ensure images are of the correct size and dimensions.
+        ScrollView coursePreviewImagesScrollView = _UIDocumentComponent.rootVisualElement.Query<ScrollView>("CoursePreviewImagesScrollView");
+        coursePreviewImagesScrollView.Clear();
+
+        foreach (Texture2D previewImageTexture in GameMaster.Instance.CurrentCourse.CoursePreviewImages)
+        {
+            Image previewImage = new Image();
+
+            previewImage.image = previewImageTexture;
+            coursePreviewImagesScrollView.Add(previewImage);
+
+            // This probably stretches the image vertically, rather than maintaining aspect ratio.
+            // Needs better solution.
+            StyleLength previewImageStyleLength = new StyleLength();
+            previewImageStyleLength.value = Length.Percent(100);
+            previewImage.style.height = previewImageStyleLength;
+        }
+
+        // Updates the UI, adding the course's description.
+        Label courseDescriptionLabel = _UIDocumentComponent.rootVisualElement.Query<Label>("CourseDescriptionLabel");
+        courseDescriptionLabel.text = GameMaster.Instance.CurrentCourse.CourseDescription;
+
+        // Adds the course's difficulty and max number of players to the UI.
+        Label difficultyMaxPlayersLabel = _UIDocumentComponent.rootVisualElement.Query<Label>("DifficultyMaxPlayersLabel");
+        difficultyMaxPlayersLabel.text = $"Difficulty: {GameMaster.Instance.CurrentCourse.Difficulty} | Max Players: {GameMaster.Instance.CurrentCourse.MaxPlayers}";
+    }
+
+    /// <summary>
+    /// This function is called when a value in the courses list dropdown is selected.
+    /// Tells the GameMaster to set the selected course as the current one.
+    /// </summary>
+    /// <param name="courseSelectionFieldChangeEvent"></param>
+    void HandleCourseSelectionChanged(ChangeEvent<string> courseSelectionFieldChangeEvent)
+    {
+        // A reference to the course selection dropdown is needed to retrieve the currently selected value.
+        DropdownField courseSelectDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("CourseSelectDropdownField");
+
+        // The elements in the dropdown field were added in the same order as the courses in the LocalGameData's courses list.
+        GameMaster.Instance.SetCourse(LocalGameData.Instance.Courses[courseSelectDropdownField.index]);
+    }
+
+    /// <summary>
     /// Implements functionality to actually add the player profile to the game.
     /// </summary>
     /// <param name="clickEventDetails">Contains information about the click that happened on the button.</param>
@@ -288,6 +406,18 @@ public class LobbyUIManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Unsubscribes from the on-click events of all visual elements in the currently displayed UI window.
+    /// </summary>
+    void UnregisterUIEventHandlers()
+    {
+        if (_UIDocumentComponent == null || _UIDocumentComponent.rootVisualElement == null)
+            return;
+
+        foreach (VisualElement visualElement in _UIDocumentComponent.rootVisualElement.Query().ToList())
+            visualElement.UnregisterAllRemovableCallbacks();
+    }
+
+    /// <summary>
     /// Called when the GameObject is destroyed.
     /// Unsubscribes from relevant events.
     /// </summary>
@@ -295,5 +425,8 @@ public class LobbyUIManager : MonoBehaviour
     {
         NetworkManager.Singleton.OnConnectionEvent -= HandleConnectionEvent;
         GameMaster.Instance.Players.OnListChanged -= HandlePlayerListChangedEvent;
+        GameMaster.Instance.CurrentCourseName.OnValueChanged -= ConstructCourseInfoUI;
+
+        UnregisterUIEventHandlers();
     }
 }

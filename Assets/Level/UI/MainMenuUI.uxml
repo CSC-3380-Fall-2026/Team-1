@@ -1,0 +1,28 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="MainMenuRootVisualElement" style="flex-grow: 1; background-color: rgb(166, 166, 166); align-items: center; justify-content: space-around; align-self: stretch;">
+        <ui:Label text="ChronoShot" name="TitleLabel" style="-unity-text-align: middle-center; -unity-font-style: bold; font-size: 30px; min-width: 100%; max-width: 100%; min-height: 10%; max-height: 10%; justify-content: flex-start; align-self: center; position: absolute; top: 0%;"/>
+        <ui:VisualElement name="MenuItemsContainerVisualElement" style="flex-grow: 1; min-width: 80%; max-width: 80%; justify-content: space-around; min-height: 50%; max-height: 50%; position: relative;">
+            <ui:Button text="Singleplayer" name="SingleplayerButton"/>
+            <ui:VisualElement name="MultiplayerContainerVisualElement" style="flex-grow: 0; flex-direction: row; min-width: auto; justify-content: space-between; align-items: stretch; align-self: auto; flex-shrink: 0; align-content: flex-start;">
+                <ui:VisualElement name="HostJoinButtonsContainerVisualElement" style="flex-grow: 1; flex-direction: row; display: flex;">
+                    <ui:Button text="Host LAN Game" name="HostLANGameButton" style="min-width: auto; max-width: none; align-items: stretch; align-self: auto; align-content: flex-start; flex-grow: 1; flex-shrink: 1;"/>
+                    <ui:Button text="Join LAN Game" name="JoinLANGameButton" style="min-width: auto; max-width: none; flex-grow: 1; flex-shrink: 1;"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="HostInformationContainerVisualElement" style="flex-grow: 1; flex-direction: row; align-items: stretch; justify-content: space-around; display: none;">
+                    <ui:IntegerField label="" name="HostPortIntegerField" max-length="65536" placeholder-text="Port (e.g. 12345)" value="12345" style="min-width: 30%;"/>
+                    <ui:Button text="Cancel" name="HostCancelButton" style="min-width: 30%;"/>
+                    <ui:Button text="Confirm" name="HostConfirmButton" style="min-width: 30%;"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="JoinInformationContainerVisualElement" style="flex-grow: 1; flex-direction: row; align-items: stretch; justify-content: space-around; display: none;">
+                    <ui:TextField label="" placeholder-text="IP (e.g. 127.0.0.1)" name="IPAddressTextField" value="127.0.0.1" max-length="16" style="min-width: 22%;"/>
+                    <ui:IntegerField label="" value="12345" name="JoinPortIntegerField" max-length="65536" placeholder-text="Port (e.g. 123450" style="min-width: 22%;"/>
+                    <ui:Button text="Cancel" name="JoinCancelButton" style="min-width: 22%;"/>
+                    <ui:Button text="Confirm" name="JoinConfirmButton" style="min-width: 22%;"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Button text="Manage Player Profiles" name="ManagePlayerProfilesButton"/>
+            <ui:Button text="Settings" name="SettingsButton"/>
+            <ui:Button text="Quit" name="QuitButton"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
