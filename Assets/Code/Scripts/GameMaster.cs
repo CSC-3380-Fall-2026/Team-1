@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.SceneManagement;
+using Unity.Collections;
 
 /// <summary>
 /// A general controller of game state.
@@ -28,15 +29,19 @@ public class GameMaster : NetworkBehaviour
     // The current state of the game. Currently only used to deny new players when not in Lobby state.
     public GameState CurrentGameState {get; private set;}
 
-    // For testing purposes, the current course being played.
-    [SerializeField]
-    Course _currentCourse;
+    // The title of the course currently being played.
+    // When this value is changed, CurrentCourse will be updated to reflect that.
+    // The separation allows for easy handling of the scenario where a host selects a course that a client doesn't have downloaded.
+    public NetworkVariable<FixedString64Bytes> CurrentCourseName = new NetworkVariable<FixedString64Bytes>(writePerm: NetworkVariableWritePermission.Server);
+
+    // The current course being played.
+    public Course CurrentCourse {private set; get;}
 
     // The index of the hole currently being played on the current course's hole list.
     int _currentHoleID = 0;
 
     // The hole referenced by the current hole ID.
-    Hole _currentHole {get => _currentCourse.Holes[_currentHoleID];}
+    Hole _currentHole {get => CurrentCourse.Holes[_currentHoleID];}
 
     // The players in the current game.
     // The list is synchronized across all clients, but only the server can change it.
@@ -363,7 +368,7 @@ public class GameMaster : NetworkBehaviour
     void LoadNextHole()
     {
         // Stops progression if no course has been assigned
-        if (_currentCourse == null)
+        if (CurrentCourse == null)
         {
             Debug.LogWarning("No course is assigned. Unable to load the next hole.");
             return;
@@ -374,7 +379,7 @@ public class GameMaster : NetworkBehaviour
 
         // Stops progression if the current hole was the final hole in the course.
         // Will move to specific scene for scoring and the leaderboard in the future. For now, just prints score info.
-        if (_currentHoleID >= _currentCourse.Holes.Length)
+        if (_currentHoleID >= CurrentCourse.Holes.Length)
         {
             Debug.Log("All players have completed the course.");
 
@@ -519,12 +524,53 @@ public class GameMaster : NetworkBehaviour
     }
 
     /// <summary>
+    /// Provides a method for external classes to set the GameMaster's current course value.
+    /// Beneficial, as it allows for limitations on when courses should be allowed to be set.
+    /// </summary>
+    /// <param name="newCourse"></param>
+    public void SetCourse(Course newCourse)
+    {
+        if (!IsHost && !IsServer)
+        {
+            Debug.LogWarning("SetCourse was called by a client, not the host/server. This should never happen.");
+            return;
+        }
+
+        CurrentCourseName.Value = newCourse.CourseName;
+    }
+
+    /// <summary>
+    /// Handles the event raised when the 'current course name' value is changed by the host.
+    /// It should set the local current course value to the course on the LocalGameData's course list with the same name.
+    /// If it isn't there (as would be the case if the host has a custom course while the client doesn't), will be handled here too.
+    /// </summary>
+    /// <param name="oldName">The value CurrentCourseName had previously.</param>
+    /// <param name="newName">The value CurrentCourseName now has.</param>
+    void HandleCurrentCourseNameValueChanged(FixedString64Bytes oldName, FixedString64Bytes newName)
+    {
+        // Sets _currentCourse to the first in the LocalGameData's courses list found with the same name.
+        foreach(Course course in LocalGameData.Instance.Courses)
+        {
+            if (course.CourseName == newName)
+            {
+                CurrentCourse = course;
+                return;
+            }
+        }
+
+        // Handles the scenario where the course isn't found in the courses list.
+        // Currently just prints a log, but later it could notify the host to prevent starting the game until
+        // the client has the course stored as well.
+        Debug.Log($"This client doesn't have the course '{CurrentCourseName.Value}' in its LocalGameData");
+    }
+
+    /// <summary>
     /// Begins the course. Handles prerequisites and state changes.
     /// </summary>
     public void StartCourse()
     {
         // Changes the scene to that of the first hole of the course for all clients.
-        NetworkManager.SceneManager.LoadScene(_currentCourse.Holes[0].Map.name, LoadSceneMode.Single);
+        NetworkManager.SceneManager.LoadScene(CurrentCourse.Holes[0].Map.name, LoadSceneMode.Single);
 
         // Needed to let the LobbyManager know to not let new clients in, only reconnections.
         CurrentGameState = GameState.Game;
@@ -575,5 +621,32 @@ public class GameMaster : NetworkBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
+
+        // Adds the handler that manages the event raised when the current course name is changed.
+        CurrentCourseName.OnValueChanged += HandleCurrentCourseNameValueChanged;
+    }
+
+    /// <summary>
+    /// This function is called on all clients when this Network Object is spawned on a client.
+    /// Needed so that clients can initialize theri CurrentCourse value when the data from the host is ready.
+    /// </summary>
+    public override void OnNetworkSpawn()
+    {
+        // Lets the base class do what it wants in this scenario beforehand.
+        base.OnNetworkSpawn();
+
+        HandleCurrentCourseNameValueChanged(default(FixedString64Bytes), CurrentCourseName.Value);
+    }
+
+    /// <summary>
+    /// This function is called just before the GameObject is destroyed.
+    /// Unsubscribes from any events.
+    /// </summary>
+    public override void OnDestroy()
+    {
+        // Lets the base class do what it wants in this scenario beforehand.
+        base.OnDestroy();
+
+        CurrentCourseName.OnValueChanged -= HandleCurrentCourseNameValueChanged;
     }
 }

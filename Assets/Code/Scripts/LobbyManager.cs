@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine.SceneManagement;
+using Unity.Netcode.Transports.SinglePlayer;
 
 /// <summary>
 /// Contains properties and behavior related to the handling of player connections.
@@ -16,8 +17,16 @@ public class LobbyManager : MonoBehaviour
     [Tooltip("The maximum number of players allowed in the game.")]
     public int maxPlayers = 4;
 
+    // Reflects whether or not the game is being hosted on LAN.
+    public bool IsSingleplayer {private set; get;}
+
     // A reference to the UnityTransport component on the LobbyManager GameObject.
+    // Used if remote clients will be involved in the game.
     UnityTransport _unityTransport;
+
+    // A reference to the SinglePlayerTransport component on the LobbyManager GameObject.
+    // Used if only the local client will be involved in the game.
+    SinglePlayerTransport _singleplayerTransport;
 
     /// <summary>
     /// Called when the object is first instantiated.
@@ -37,8 +46,9 @@ public class LobbyManager : MonoBehaviour
     }
     void Start()
     {
-        // Gets a reference to the UnityTransport component on the GameObject for hosting/joining a game.
+        // Gets a reference to the transport components on the GameObject for hosting/joining a game.
         _unityTransport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+        _singleplayerTransport = NetworkManager.Singleton.GetComponent<SinglePlayerTransport>();
     }
 
     /// <summary>
@@ -48,8 +58,14 @@ public class LobbyManager : MonoBehaviour
     /// <param name="hostPort">The port that will be used to handle connections.</param>
     public void BeginHosting(bool dontHostOnLAN, ushort hostPort)
     {
-        // Tells the NetworkManager to use UnityTransport as the transport layer.
-        NetworkManager.Singleton.NetworkConfig.NetworkTransport = _unityTransport;
+        // Used to minimize UI to just the necessary parts.
+        IsSingleplayer = dontHostOnLAN;
+
+        // Tells the NetworkManager to use either SinglePlayerTransport UnityTransport as the transport layer.
+        // SinglePlayerTransport simulates UnityTransport, but doesn't make any actual network requests.
+        // This allows implementation of behavior to only account for the multiplayer case, rather than requiring
+        // consideration of both single and multiplayer.
+        NetworkManager.Singleton.NetworkConfig.NetworkTransport = dontHostOnLAN ? _singleplayerTransport : _unityTransport;
 
         // Sets the connection information. Enables listening on all interfaces if dontHostOnLAN is false.
         _unityTransport.SetConnectionData("127.0.0.1", hostPort, dontHostOnLAN ? null : "0.0.0.0");
@@ -155,7 +171,7 @@ public class LobbyManager : MonoBehaviour
             NetworkManager.Singleton.OnClientDisconnectCallback -= HandleClientDisconnection;
 
             // Changes the scene to a pre-lobby one.
-            SceneManager.LoadScene("GameMode");
+            SceneManager.LoadScene("MainMenu");
         }
 
         // If the disconnection happened mid-lobby, remove all the client's players.

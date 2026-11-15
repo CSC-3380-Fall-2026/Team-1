@@ -20,6 +20,10 @@ public class LocalGameData : MonoBehaviour
     // Used to determine if a client is reconnecting (GUID match) or a new player.
     public string GUID;
 
+    // This list will contain all the courses in the game.
+    [Tooltip("A list of all the courses in the game.")]
+    public Course[] Courses;
+
     /// <summary>
     /// This function is called when the gameObject is first instantiated.
     /// Handles singleton logic, creates test players and sets the GUID.
