@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5a1325f807cf3434aa5f4feab51b7673, type: 3}
-  m_Name: Beginner Course
+  m_Name: BeginnerCourse
   m_EditorClassIdentifier: ChronoShot::Course
-  CourseName: Beginner Course
+  CourseName: BeginnerCourse
   Holes:
   - {fileID: 11400000, guid: fb1574a1034844d01aff90fd9fec1af7, type: 2}
   - {fileID: 11400000, guid: 96596c12fae688249819591932c448ba, type: 2}
