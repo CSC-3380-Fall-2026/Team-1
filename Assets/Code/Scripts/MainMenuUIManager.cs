@@ -23,6 +23,10 @@ public class MainMenuUIManager : MonoBehaviour
     // Changing the source asset changes the UI displayed.
     UIDocument _UIDocumentComponent;
 
+    // This player profile will contain information about the player profile currently being edited in
+    // the 'Manage Player Profiles' window.
+    Player _currentlyEditedPlayerProfile;
+
     // Used to determine if this client will host a game or join a game when handling the confirm button's click event.
     bool _hosting;
 
@@ -140,11 +144,122 @@ public class MainMenuUIManager : MonoBehaviour
         // Changes the displayed UI asset to the 'manage profiles' UXML file.
         _UIDocumentComponent.visualTreeAsset = _manageProfilesUIAsset;
 
-        // Subscribes to the click events of buttons in the settings menu.
+        // The list of player profiles in the dropdown should update whenever the player profiles list changes.
+        // This in turn causes the profile customization section to update as well.
+        LocalGameData.Instance.PlayerProfilesListChanged -= ConstructPlayerProfilesListUI;
+        LocalGameData.Instance.PlayerProfilesListChanged += ConstructPlayerProfilesListUI;
+
+        // Subscribing does not call the function, so the initial setup needs to be called manually.
+        ConstructPlayerProfilesListUI();
+        ConstructPlayerProfileEditUI();
+
+        // Subscribes to the click/value change events of elements in the 'manage profiles' menu.
         // Unsubscribes first to avoid duplicate registration.
         Button backToMainMenuButton = _UIDocumentComponent.rootVisualElement.Query<Button>("BackToMainMenuButton");
         backToMainMenuButton.UnregisterCallback<ClickEvent>(HandleBackToMainMenuButtonClicked);
         backToMainMenuButton.RegisterCallback<ClickEvent>(HandleBackToMainMenuButtonClicked);
+
+        DropdownField profileSelectDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("ProfileSelectDropdownField");
+        profileSelectDropdownField.UnregisterValueChangedCallback(HandleSelectedPlayerProfileDropdownChanged);
+        profileSelectDropdownField.RegisterValueChangedCallback(HandleSelectedPlayerProfileDropdownChanged);
+
+        Button AddNewPlayerProfileButton = _UIDocumentComponent.rootVisualElement.Query<Button>("AddNewPlayerProfileButton");
+        AddNewPlayerProfileButton.UnregisterCallback<ClickEvent>(HandleAddNewPlayerProfileButtonClicked);
+        AddNewPlayerProfileButton.RegisterCallback<ClickEvent>(HandleAddNewPlayerProfileButtonClicked);
+
+        Button deletePlayerProfileButton = _UIDocumentComponent.rootVisualElement.Query<Button>("DeletePlayerProfileButton");
+        deletePlayerProfileButton.UnregisterCallback<ClickEvent>(HandleDeletePlayerProfileButtonClicked);
+        deletePlayerProfileButton.RegisterCallback<ClickEvent>(HandleDeletePlayerProfileButtonClicked);
+
+        Button savePlayerProfileButton = _UIDocumentComponent.rootVisualElement.Query<Button>("SavePlayerProfileButton");
+        savePlayerProfileButton.UnregisterCallback<ClickEvent>(HandleSavePlayerProfileButtonClicked);
+        savePlayerProfileButton.RegisterCallback<ClickEvent>(HandleSavePlayerProfileButtonClicked);
+
+        TextField newProfileNameTextField = _UIDocumentComponent.rootVisualElement.Query<TextField>("NewPlayerNameTextField");
+        newProfileNameTextField.UnregisterValueChangedCallback(HandleAddNewPlayerNameTextFieldChanged);
+        newProfileNameTextField.RegisterValueChangedCallback(HandleAddNewPlayerNameTextFieldChanged);
+
+        Button confirmAddPlayerProfile = _UIDocumentComponent.rootVisualElement.Query<Button>("ConfirmNewPlayerProfileButton");
+        confirmAddPlayerProfile.UnregisterCallback<ClickEvent>(HandleConfirmAddNewPlayerButtonClicked);
+        confirmAddPlayerProfile.RegisterCallback<ClickEvent>(HandleConfirmAddNewPlayerButtonClicked);
+    }
+
+    /// <summary>
+    /// Fills the player profile selection dropdown with the names of LocalGameData's player profiles.
+    /// Disables/enables UI elements which should only be interactable if the dropdown has any choices available.
+    /// </summary>
+    /// <param name="changeIndex">The index of a newly added/removed player profile in the LocalGameData's player profiles list.</param>
+    void ConstructPlayerProfilesListUI(int changeIndex = -1)
+    {
+        // This dropdown will contain a list of player profile names in the index order they are stored in LocalGameData.
+        DropdownField profileSelectDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("ProfileSelectDropdownField");
+
+        // Editing the dropdown's members requires it to be enabled first.
+        profileSelectDropdownField.SetEnabled(true);
+
+        // Need to clear the list before adding new values, or there will be duplicate entries/a lack of changes.
+        profileSelectDropdownField.choices.Clear();
+
+        // Populates the dropdown choices with the names of players in the LocalGameData's player profiles list.
+        foreach (Player playerProfile in LocalGameData.Instance.PlayerProfiles)
+            profileSelectDropdownField.choices.Add(playerProfile.PlayerName.ToString());
+
+        // changeIndex will be either the index (in the LocalGameData's PlayerProfiles list) of a newly added profile, the previous index
+        // of a removed element, or -1 for general changes (e.g. deleting the entire list/loading multiple profiles from the disk).
+        // For the aforementioned general changes (changeIndex = -1), the selected profile should default to the first in the list.
+        // For newly added profiles (changeIndex = new profile's index), the selected profile will be the last element in the dropdown.
+        // When a profile is removed, the next element after it in the list should be selected (index 0 removed, 1 becomes 0, 0 selected).
+        profileSelectDropdownField.index = (changeIndex < 0) ? 0 : Mathf.Clamp(changeIndex, -1, profileSelectDropdownField.choices.Count - 1);
+
+        // For some reason, the visual text value refuses to update to match the index in some cases.
+        // This issue is resolved by manually changing the value to match the index.
+        if (profileSelectDropdownField.index >= 0)
+            profileSelectDropdownField.value = profileSelectDropdownField.choices[profileSelectDropdownField.index];
+
+        // The button to delete player profiles shouldn't be able to be clicked while there are no profiles to delete.
+        Button deletePlayerProfileButton = _UIDocumentComponent.rootVisualElement.Query<Button>("DeletePlayerProfileButton");
+        deletePlayerProfileButton.SetEnabled(profileSelectDropdownField.text != string.Empty);
+
+        // Updating the player profile customization window is intended to be done whenever the selected player profile in the dropdown
+        // changes, but the event is not raised when dropdown choices are added/removed/selected via code, only via the UI itself.
+        // Therefore, the handler needs to be called manually.
+        HandleSelectedPlayerProfileDropdownChanged(default);
+
+        // There is no need for the dropdown to be interactable if there are no choices to select.
+        profileSelectDropdownField.SetEnabled(profileSelectDropdownField.choices.Count > 0);
+    }
+
+    /// <summary>
+    /// Sets up the player profile customization UI based on whether a new profile is being created or an existing one customized.
+    /// </summary>
+    /// <param name="newPlayerProfile">The UI for creating a new player profile will be shown if true, customizing existing if false.</param>
+    void ConstructPlayerProfileEditUI(bool newPlayerProfile = false)
+    {
+        // Two different sets of UI elements need to be shown/hidden in alternating manner based on whether the player is adding a new
+        // player profile or customizing an existing one.
+        VisualElement newPlayerProfileElementsContainer = _UIDocumentComponent.rootVisualElement.Query("NewPlayerProfileElementsContainer");
+        VisualElement existingPlayerProfileElementsContainer = _UIDocumentComponent.rootVisualElement.Query("ExistingPlayerProfileElementsContainer");
+
+        // The element set for adding a new profile only needs to be shown if indicated via argument or there is no profile currently being customized.
+        bool showNewPlayerUI = newPlayerProfile || _currentlyEditedPlayerProfile.PlayerName.ToString() == string.Empty;
+
+        // Hides/shows the UI element sets based on the operation being performed.
+        newPlayerProfileElementsContainer.style.display = showNewPlayerUI ? DisplayStyle.Flex : DisplayStyle.None;
+        existingPlayerProfileElementsContainer.style.display = showNewPlayerUI ? DisplayStyle.None : DisplayStyle.Flex;
+
+        // Initializes the UI elements required for the addition/customization of a player profile.
+        if (showNewPlayerUI)
+        {
+            TextField newProfileNameTextField = _UIDocumentComponent.rootVisualElement.Query<TextField>("NewPlayerNameTextField");
+            newProfileNameTextField.value = string.Empty;
+
+            Button confirmAddPlayerProfile = _UIDocumentComponent.rootVisualElement.Query<Button>("ConfirmNewPlayerProfileButton");
+            confirmAddPlayerProfile.SetEnabled(false);
+        } else
+        {
+            Label playerNameLabel = _UIDocumentComponent.rootVisualElement.Query<Label>("PlayerNameLabel");
+            playerNameLabel.text = _currentlyEditedPlayerProfile.PlayerName.ToString();
+        }
     }
 
     /// <summary>
@@ -170,7 +285,7 @@ public class MainMenuUIManager : MonoBehaviour
     /// <param name="clickEventInfo">Contains information about the button click event.</param>
     void HandleSingleplayerButtonClicked(ClickEvent clickEventInfo)
     {
-        LobbyManager.Instance.BeginHosting(true, default(ushort));
+        LobbyManager.Instance.BeginHosting(true, default);
         NetworkManager.Singleton.SceneManager.LoadScene("Lobby", UnityEngine.SceneManagement.LoadSceneMode.Single);
     }
 
@@ -236,6 +351,89 @@ public class MainMenuUIManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Handler for the situation where the "Add New Profile" button is clicked.
+    /// Shows the profile customization window in "add player profile" mode rather than "customize" mode.
+    /// </summary>
+    /// <param name="clickEventInfo">Contains information about the button click event.</param>
+    void HandleAddNewPlayerProfileButtonClicked(ClickEvent clickEventInfo)
+    {
+        ConstructPlayerProfileEditUI(true);
+    }
+
+    /// <summary>
+    /// Handler for the situation where the "Delete Profile" button is clicked.
+    /// Tells the LocalGameData object to delete the profile whose index matches that of the dropdown's selection.
+    /// </summary>
+    /// <param name="clickEventInfo">Contains information about the button click event.</param>
+    void HandleDeletePlayerProfileButtonClicked(ClickEvent clickEventInfo)
+    {
+        // The elements in the player profiles dropdown and the list in LocalGameData have the same indices.
+        DropdownField profileSelectDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("ProfileSelectDropdownField");
+        LocalGameData.Instance.RemovePlayerProfile(profileSelectDropdownField.index);
+    }
+
+    /// <summary>
+    /// Handler for the situation where the user types anything in the player name input box.
+    /// Enables/disables the button to add a new player based on the availability of the typed name.
+    /// </summary>
+    /// <param name="changeEventInfo">Contains information about the text field change event.</param>
+    void HandleAddNewPlayerNameTextFieldChanged(ChangeEvent<string> changeEventInfo)
+    {
+        Button confirmAddPlayerProfile = _UIDocumentComponent.rootVisualElement.Query<Button>("ConfirmNewPlayerProfileButton");
+        TextField newProfileNameTextField = _UIDocumentComponent.rootVisualElement.Query<TextField>("NewPlayerNameTextField");
+
+        // The button to add the new profile to the profiles list should only be clickable if a profile with the same name
+        // doesn't exist already and the input field isn't blank.
+        bool allowedToSavePlayerName =
+            LocalGameData.Instance.PlayerProfilesListContainsName(newProfileNameTextField.value) == -1 &&
+            newProfileNameTextField.value != string.Empty;
+
+        confirmAddPlayerProfile.SetEnabled(allowedToSavePlayerName);
+    }
+
+    /// <summary>
+    /// Handler for the situation where the button to save the customizations made to a player profile is clicked.
+    /// Updates the profile in the LocalGameData's profile list.
+    /// </summary>
+    /// <param name="clickEventInfo">Contains information about the button click event.</param>
+    void HandleSavePlayerProfileButtonClicked(ClickEvent clickEventInfo)
+    {
+        LocalGameData.Instance.AddPlayerProfile(_currentlyEditedPlayerProfile);
+    }
+
+    /// <summary>
+    /// Handler for the situation where a different player profile's name is selected in the dropdown menu.
+    /// Changes the customization screen to display the newly selected profile.
+    /// </summary>
+    /// <param name="changeEventInfo">Contains information about the dropdown selection change event.</param>
+    void HandleSelectedPlayerProfileDropdownChanged(ChangeEvent<string> changeEventInfo)
+    {
+        DropdownField profileSelectDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("ProfileSelectDropdownField");
+
+        // Stores a copy of the profile to be customized: the one with the same index in the LocalGameData's profiles list.
+        // If there isn't a profile available at the dropdown's index, a blank profile (new) is stored instead.
+        if (LocalGameData.Instance.PlayerProfiles.Count > profileSelectDropdownField.index && profileSelectDropdownField.index >= 0)
+            _currentlyEditedPlayerProfile = LocalGameData.Instance.PlayerProfiles[profileSelectDropdownField.index];
+        else
+            _currentlyEditedPlayerProfile = new Player();
+
+        // Changes the UI to display the new profile's customization choices.
+        ConstructPlayerProfileEditUI();
+    }
+
+    /// <summary>
+    /// Handles the situation where the button to finalize the addition of a new player profile is clicked.
+    /// Tells the LocalGameData to add a player with the selected name.
+    /// </summary>
+    /// <param name="clickEventinfo">Contains information about the button's click event.</param>
+    void HandleConfirmAddNewPlayerButtonClicked(ClickEvent clickEventinfo)
+    {
+        TextField newProfileNameTextField = _UIDocumentComponent.rootVisualElement.Query<TextField>("NewPlayerNameTextField");
+        Player newPlayer = new Player {PlayerName = newProfileNameTextField.value};
+        LocalGameData.Instance.AddPlayerProfile(newPlayer);
+    }
+
+    /// <summary>
     /// This function is called when the settings button in the main menu is clicked.
     /// Unloads the main menu UI and loads the settings UI.
     /// </summary>
@@ -285,5 +483,6 @@ public class MainMenuUIManager : MonoBehaviour
     void OnDestroy()
     {
         UnregisterUIElementEventHandlers();
+        LocalGameData.Instance.PlayerProfilesListChanged -= ConstructPlayerProfilesListUI;
     }
 }

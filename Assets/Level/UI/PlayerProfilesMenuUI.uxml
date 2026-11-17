@@ -1,11 +1,24 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <ui:VisualElement name="PlayerProfilesMenuRoot" style="flex-grow: 1; background-color: rgb(166, 166, 166);">
         <ui:Label text="Manage Player Profiles" name="PlayerProfilesTitleLabel" style="align-self: auto; -unity-font-style: bold; font-size: 32px; -unity-text-align: upper-center; top: 5%;"/>
-        <ui:VisualElement name="ProfileEditContent" style="flex-grow: 1; min-width: 80%; max-width: 80%; align-self: center; min-height: 50%; max-height: 50%; top: 10%; background-color: rgba(51, 51, 51, 0.784);"/>
+        <ui:VisualElement name="ProfileEditContent" style="flex-grow: 1; min-width: 80%; max-width: 80%; align-self: center; min-height: 50%; max-height: 50%; top: 10%; background-color: rgba(51, 51, 51, 0.784); flex-direction: row;">
+            <ui:VisualElement name="PlayerInfoContainer" style="flex-grow: 1; max-height: none; align-items: center; align-content: auto; justify-content: center; max-width: 30%;">
+                <ui:Image name="PlayerBallImage" style="width: 100px; height: 100px;"/>
+                <ui:VisualElement name="NewPlayerProfileElementsContainer" style="flex-grow: 1; width: 75%; height: auto; max-height: 30%; margin-top: 5%; display: none;">
+                    <ui:TextField label="" placeholder-text="Enter new name." name="NewPlayerNameTextField"/>
+                    <ui:Button text="Add New Player" name="ConfirmNewPlayerProfileButton" enabled="true"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="ExistingPlayerProfileElementsContainer" style="flex-grow: 1; height: auto; max-height: 25%;">
+                    <ui:Label text="Player Name" name="PlayerNameLabel" style="-unity-text-align: upper-center;"/>
+                    <ui:Button text="Save" name="SavePlayerProfileButton"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="PlayerCustomizationContainer" style="flex-grow: 1;"/>
+        </ui:VisualElement>
         <ui:VisualElement name="ProfileEditAndMenuContainer" style="flex-grow: 1; min-height: 15%; max-height: 15%; position: absolute; top: 75%; min-width: 80%; align-self: center; flex-direction: row; justify-content: space-between;">
             <ui:DropdownField label="" name="ProfileSelectDropdownField" style="min-width: 50%;"/>
-            <ui:Button text="Add" name="AddProfileButton" style="min-width: 15%; max-width: 15%;"/>
-            <ui:Button text="Delete" name="DeleteProfileButton" style="min-width: 15%; max-width: 15%;"/>
+            <ui:Button text="Add" name="AddNewPlayerProfileButton" style="min-width: 15%; max-width: 15%;"/>
+            <ui:Button text="Delete" name="DeletePlayerProfileButton" style="min-width: 15%; max-width: 15%;"/>
             <ui:Button text="Main Menu" name="BackToMainMenuButton" style="min-width: 15%; max-width: 15%;"/>
         </ui:VisualElement>
     </ui:VisualElement>
