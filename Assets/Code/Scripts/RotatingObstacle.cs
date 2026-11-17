@@ -21,8 +21,8 @@ public class RotatingObstacle : NetworkBehaviour
     /// </summary>
     private void Awake()
     {
-        _rigidbody2D.bodyType = RigidbodyType2D.Kinematic;
         _rigidbody2D = GetComponent<Rigidbody2D>();
+        _rigidbody2D.bodyType = RigidbodyType2D.Kinematic;
 
         if (_rotateAroundCenter)
         {
