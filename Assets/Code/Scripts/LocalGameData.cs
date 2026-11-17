@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
@@ -20,7 +21,9 @@ public class LocalGameData : MonoBehaviour
 
     // Other classes, like the 'Manage Player Profiles' related UI, need to perform
     // actions (like reconstructing the UI) when the list of player profiles changes.
-    public delegate void PlayerProfilesListChangedEvent();
+    // The parameter is the index of the newly added/removed player profile, or -1 if
+    // a general change was made.
+    public delegate void PlayerProfilesListChangedEvent(int changeIndex = -1);
     public PlayerProfilesListChangedEvent PlayerProfilesListChanged;
 
     // A unique identifier that will be generated when the application is opened.
@@ -61,33 +64,28 @@ public class LocalGameData : MonoBehaviour
     /// <param name="newPlayerProfile">The Player object containing information about the new/updated player.</param>
     public void AddPlayerProfile(Player newPlayerProfile)
     {
+        if (newPlayerProfile.PlayerName == string.Empty)
+        {
+            Debug.LogError("Profile to be added has no name. Not allowed.");
+            return;
+        }
         // This function should update a profile if it exists and create a new one if not.
         // It would be easier to check using PlayerProfiles.Contains(newPlayerProfile), but what if both have
         // the same name but different score values stored? Have to check manually to use the name as the identifier.
-        int indexOfProfileWithSameName = -1;
-
-        for (int i = 0; i < PlayerProfiles.Count; i++)
-        {
-            if (PlayerProfiles[i].PlayerName == newPlayerProfile.PlayerName)
-            {
-                indexOfProfileWithSameName = i;
-                break;
-            }
-        }
+        int indexOfProfileWithSameName = PlayerProfilesListContainsName(newPlayerProfile.PlayerName.ToString());
 
         // If the index remaind at -1, then no profile with the same name was found. If not, one was found.
         if (indexOfProfileWithSameName != -1)
         {
-            Debug.Log("Found player with same name. Overwriting.");
             PlayerProfiles[indexOfProfileWithSameName] = newPlayerProfile;
         } else
         {
-            Debug.Log("Added new player profile.");
             PlayerProfiles.Add(newPlayerProfile);
         }
 
         // Calls all other functions interested in performing actions when the list of player profiles is changed.
-        PlayerProfilesListChanged?.Invoke();
+        // Passes on the index of the updated or added element.
+        PlayerProfilesListChanged?.Invoke(indexOfProfileWithSameName == -1 ? PlayerProfiles.Count - 1 : indexOfProfileWithSameName);
 
         // It would be more efficient to save player profiles when leaving the 'Manage Player Profiles' window.
         SaveAllPlayerProfilesToDisk();
@@ -100,7 +98,7 @@ public class LocalGameData : MonoBehaviour
     public void RemovePlayerProfile(int indexOfProfileInProfilesList)
     {
         // Bounds checking the index supplied.
-        if (indexOfProfileInProfilesList < 0 || indexOfProfileInProfilesList >- PlayerProfiles.Count)
+        if (indexOfProfileInProfilesList < 0 || indexOfProfileInProfilesList >= PlayerProfiles.Count)
         {
             Debug.LogError($"Tried to reference out-of-range index: {indexOfProfileInProfilesList}.");
             return;
@@ -108,6 +106,9 @@ public class LocalGameData : MonoBehaviour
 
         // No other checks needed after bounds setting.
         PlayerProfiles.RemoveAt(indexOfProfileInProfilesList);
+
+        // Calls all other functions interested in performing actions when the list of player profiles is changed.
+        PlayerProfilesListChanged?.Invoke(indexOfProfileInProfilesList);
 
         // It would be more efficient to save player profiles when leaving the 'Manage Player Profiles' window.
         SaveAllPlayerProfilesToDisk();
@@ -178,8 +179,6 @@ public class LocalGameData : MonoBehaviour
             loadedPlayerProfile.PlayerName = PlayerPrefs.GetString(playerNameKey);
         else
         {
-            Debug.LogError("Couldn't find a player profile with that name.");
-
             // Returning an empty profile should be taken as an indicator that there was a problem
             // encountered when trying to load the profile.
             loadedPlayerProfile = new Player();
@@ -194,6 +193,10 @@ public class LocalGameData : MonoBehaviour
     /// <param name="emptyPlayerProfilesListBeforehand">Clears the PlayerProfiles list before loading new ones from the disk if true.</param>
     void LoadAllPlayerProfilesFromDisk(bool emptyPlayerProfilesListBeforehand = true)
     {
+        // Initialization, as this is likely the first time the list is needed.
+        if (PlayerProfiles == null)
+            PlayerProfiles = new List<Player>();
+
         // Unlikely that there would ever be a need to load player profiles from the disk without clear the current
         // list beforehand, but just in case.
         if (emptyPlayerProfilesListBeforehand)
@@ -219,5 +222,27 @@ public class LocalGameData : MonoBehaviour
 
         // Calls all other functions interested in performing actions when the list of player profiles is changed.
         PlayerProfilesListChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// Checks if the PlayerProfiles list contains a profile with the same name as the supplied string.
+    /// </summary>
+    /// <param name="playerNameToCheck">The name to check for in the Player Profiles list.</param>
+    /// <returns>The index of the profile found. -1 if none were found.</returns>
+    public int PlayerProfilesListContainsName(string playerNameToCheck)
+    {
+        // This value will be left at -1 if no profile with the same name is found.
+        int indexOfProfileWithSameName = -1;
+
+        for (int i = 0; i < PlayerProfiles.Count; i++)
+        {
+            if (PlayerProfiles[i].PlayerName == playerNameToCheck)
+            {
+                indexOfProfileWithSameName = i;
+                break;
+            }
+        }
+
+        return indexOfProfileWithSameName;
     }
 }
