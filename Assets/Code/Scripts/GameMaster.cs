@@ -588,6 +588,17 @@ public class GameMaster : NetworkBehaviour
         MovingPlatform[] movingPlatforms = FindObjectsByType<MovingPlatform>(FindObjectsSortMode.None);
         foreach (MovingPlatform movingPlatform in movingPlatforms)
             _objectsToGiveToOwner.Add(movingPlatform.NetworkObject);
+            
+        // Adds every rotating obstacle to the list.
+        RotatingObstacle[] rotatingObstacles = FindObjectsByType<RotatingObstacle>(FindObjectsSortMode.None);
+
+        foreach (RotatingObstacle rotatingObstacle in rotatingObstacles)
+        {
+            NetworkObject networkObject = rotatingObstacle.GetComponent<NetworkObject>();
+
+            if (networkObject != null && !_objectsToGiveToOwner.Contains(networkObject))
+                _objectsToGiveToOwner.Add(networkObject);
+        }
     }
 
     /// <summary>
