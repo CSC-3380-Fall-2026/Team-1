@@ -8,10 +8,10 @@ using Unity.Netcode;
 [RequireComponent(typeof(Rigidbody2D))]
 public class RotatingObstacle : NetworkBehaviour
 {
-    [SerializeField] private float _rotationSpeed = 90f;
-    [SerializeField] private bool _clockwise = true;
-    [SerializeField] private bool _rotateAroundCenter = true;
-    [SerializeField] private Transform _customPivot;
+    [SerializeField] float _rotationSpeed = 90f;
+    [SerializeField] bool _clockwise = true;
+    [SerializeField] bool _rotateAroundCenter = true;
+    [SerializeField] Transform _customPivot;
 
     private Rigidbody2D _rigidbody2D;
     private Vector2 _rotationPoint;
