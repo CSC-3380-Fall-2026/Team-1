@@ -1,18 +1,17 @@
-using System.Reflection;
+
 using NUnit.Framework;
-using UnityEngine; 
+using UnityEngine;
 
 /// <summary>
-/// Contains unit test for the Chronoshot reset system
+/// Contains unit tests for the ChronoShot reset system.
 /// </summary>
 public class ChronoShotResetTest
 {
     private GameObject _gameMasterObject;
     private GameMaster _gameMaster;
 
-
     /// <summary>
-    /// This is a temporary GameMaster and it restores normal time before each test
+    /// Creates a temporary GameMaster and restores normal time before each test.
     /// </summary>
     [SetUp]
     public void SetUp()
@@ -23,69 +22,47 @@ public class ChronoShotResetTest
         Time.timeScale = 1.0f;
     }
 
-
     /// <summary>
-    /// Remvoes the temp GameMaster after each test
+    /// Removes the temporary GameMaster after each test.
     /// </summary>
     [TearDown]
     public void TearDown()
     {
         GameObject.DestroyImmediate(_gameMasterObject);
+        Time.timeScale = 1.0f;
     }
 
     /// <summary>
-    /// Verifies that ChronoShot becomes inactive after it resets
-    /// </summary>
-    [Test]
-    public void ChronoShotBecomesInactiveAfterReset()
-    {
-        _gameMaster.SetTimeRate(0.2f);
-        _gameMaster.ResetChronoShot();
-        Assert.AreEqual(1.0f, Time.timeScale);
-    }
-
-    /// <summary>
-    /// Verfiy that ChronoShot reset restores the normal game time speed
-    ////summary>
-    [Test]
-    public void ChronoShotResetRestoreNormalTimeSpeed()
-    {
-        _gameMaster.SetTimeRate(0.5f);
-        Assert.AreEqual(0.5f, Time.timeScale);
-        _gameMaster.ResetChronoShot();
-        Assert.AreEqual(1.0f, Time.timeScale);
-    }
-
-    /// <summary>
-    /// Verifies that ChronoShot can be reset repeatedly without causeing any errors
+    /// Verifies that ChronoShot can be reset repeatedly without errors.
     /// </summary>
     [Test]
     public void ChronoShotCanResetRepeatedly()
     {
         _gameMaster.SetTimeRate(0.2f);
-        {
-            _gameMaster.SetTimeRate(0.2f);
-            Assert.DoesNotThrow(() =>
-            {
-                _gameMaster.ResetChronoShot();
-                _gameMaster.ResetChronoShot();
-                _gameMaster.ResetChronoShot();
-            });
 
-            Assert.AreEqual(1.0f, Time.timeScale);
-        }
+        Assert.DoesNotThrow(() =>
+        {
+            _gameMaster.ResetChronoShot();
+            _gameMaster.ResetChronoShot();
+            _gameMaster.ResetChronoShot();
+        });
+
+        Assert.AreEqual(1.0f, Time.timeScale);
     }
 
     /// <summary>
-    /// Verifies that Chronoshot can be activated again after being reset
+    /// Verifies that ChronoShot can be activated again after being reset.
     /// </summary>
-    [Test] 
+    [Test]
     public void ChronoShotCanActivateAgainAfterReset()
     {
         _gameMaster.SetTimeRate(0.2f);
         _gameMaster.ResetChronoShot();
+
         Assert.AreEqual(1.0f, Time.timeScale);
+
         _gameMaster.SetTimeRate(0.2f);
+
         Assert.AreEqual(0.2f, Time.timeScale);
     }
 }
