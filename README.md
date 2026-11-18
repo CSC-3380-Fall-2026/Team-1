@@ -19,7 +19,8 @@ ChronoShot is a fast-paced, 2D arcade-style golf game designed for PC and mobile
 # Important Links
 Kanban Board: https://github.com/orgs/CSC-3380-Fall-2026/projects/12/views/1 \
 Designs: [link]\
-Styles Guide(s): [C#](https://google.github.io/styleguide/csharp-style.html), [SQL](https://www.sqlstyle.guide/)
+Styles Guide(s): [C#](https://google.github.io/styleguide/csharp-style.html), [SQL](https://www.sqlstyle.guide/)\
+A [web server](https://github.com/isometrc/ChronoShot-WebServer.git) is needed to provide an api for the game client to communicate with the leaderboard.
 
 # How to Run Dev and Test Environment
 
