@@ -66,8 +66,7 @@ public class GameMaster : MonoBehaviour
     /// <param name="startFromIndex">Only spawn points on or after this index on the list will be considered.</param>
     public void ResetBall(GameObject ballToBeReset, GameObject[] resetLocationObjects, bool removeStatusEffects = true, int startFromIndex = 0)
     {
-        // When we add a ball status component, reset its status effects.
-        if (removeStatusEffects);
+        // No BallStatus component currently exists, so there are no status effects to reset.
 
         // This will be set to the location of the first free reset location provided.
         Vector2 resetLocation = Vector2.zero;
