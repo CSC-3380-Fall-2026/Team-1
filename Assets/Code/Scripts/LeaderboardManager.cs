@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using Newtonsoft.Json;
 
 /// <summary>
 /// Handles operations involving data from the online leaderboard.
@@ -181,6 +182,8 @@ public class LeaderboardManager : MonoBehaviour
             }
             else
             {
+                Debug.Log(courseRecordsGETRequest.downloadHandler.text);
+
                 // Short-circuit if the response was empty.
                 if (courseRecordsGETRequest.downloadHandler.text == string.Empty)
                 {
@@ -194,24 +197,26 @@ public class LeaderboardManager : MonoBehaviour
                 //  The value at each index is a list of the records in the leaderboard table (a list of key-value pairs).
                 //  The 'key' in those pairs is the column of the record (name, score, hits, time-spent).
                 //  The 'value' in those pairs is the value in the aformentioned columns.
-                List<List<Dictionary<string, object>>> courseRecords = new List<List<Dictionary<string, object>>>();
-                courseRecords = JsonUtility.FromJson<List<List<Dictionary<string, object>>>>(courseRecordsGETRequest.downloadHandler.text);
+                Dictionary<string, List<Dictionary<string, object>>> courseRecords = new Dictionary<string, List<Dictionary<string, object>>>();
+                courseRecords = JsonConvert.DeserializeObject<Dictionary<string, List<Dictionary<string, object>>>>(courseRecordsGETRequest.downloadHandler.text);
 
                 // Need to translate the records' key-value pairs from raw objects into PlayerResult objects.
-                for (int i = 0; i < courseRecords.Count; i++)
+                for (int i = 0; i < courseRecords.Keys.Count; i++)
                 {
                     // In the leaderboard cache dictionary, the key should be <courseName>.<holeNumber>, where holeNumber 0 is the cumulative course record.
                     string keyInCachedLeaderboardsDictionary = $"{courseName}.{i}";
 
-                    List<PlayerResult> resultsList = new List<PlayerResult>(courseRecords[i].Count);
-                    foreach (Dictionary<string, object> rawCourseRecord in courseRecords[i])
-                        resultsList.Add(new PlayerResult
-                        {
-                            PlayerName = (string)rawCourseRecord["player_name"],
-                            PlayerScore = (float)rawCourseRecord["score"],
-                            PlayerHits = (int)rawCourseRecord["hits"],
-                            PlayerTimeSpent = (float)rawCourseRecord["time_spent"]
-                        });
+                    List<PlayerResult> resultsList = new List<PlayerResult>();
+                    foreach (Dictionary<string, object> rawCourseRecord in courseRecords[$"{i}"])
+                    {
+                        PlayerResult newPlayerResult = new PlayerResult();
+                        newPlayerResult.PlayerName = rawCourseRecord["player_name"].ToString();
+                        newPlayerResult.PlayerScore = Convert.ToSingle(rawCourseRecord["score"]);
+                        newPlayerResult.PlayerHits = Convert.ToInt32(rawCourseRecord["hits"]);
+                        newPlayerResult.PlayerTimeSpent = Convert.ToSingle(rawCourseRecord["time_spent"]);
+
+                        resultsList.Add(newPlayerResult);
+                    }
 
                     _cachedLeaderboardRecords[keyInCachedLeaderboardsDictionary] = resultsList;
                 }
@@ -243,7 +248,10 @@ public class LeaderboardManager : MonoBehaviour
 
         // The first list of results is the cumulative course results list; the rest are hole-specific.
         for (int i = 0; i < playerResults.Count; i++)
-            resultsPostRequestPayloads.Add(JsonUtility.ToJson(playerResults[i]));
+        {
+            resultsPostRequestPayloads.Add(JsonConvert.SerializeObject(playerResults[i]));
+            Debug.Log(resultsPostRequestPayloads[i]);
+        }
 
         // Makes and sends POST requests for each hole's player results.
         for (int holeNumber = 0; holeNumber < resultsPostRequestPayloads.Count; holeNumber++)

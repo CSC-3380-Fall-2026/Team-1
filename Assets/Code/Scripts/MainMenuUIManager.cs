@@ -407,7 +407,7 @@ public class MainMenuUIManager : MonoBehaviour
         leaderboardColumnListView.columns["PlayerName"].bindCell = (VisualElement associatedElement, int index) =>
         {
             PlayerResult playerResult = (PlayerResult)leaderboardColumnListView.itemsSource[index];
-            ((Label)associatedElement).text = playerResult.PlayerName.ToString();
+            ((Label)associatedElement).text = playerResult.PlayerName;
         };
 
         leaderboardColumnListView.columns["PlayerScore"].makeCell = () => new Label();

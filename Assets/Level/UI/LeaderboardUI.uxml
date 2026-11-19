@@ -8,7 +8,7 @@
                 <ui:Button text="Refresh" name="RefreshLeaderboardButton"/>
             </ui:VisualElement>
             <ui:VisualElement name="LeaderboardDisplayContainer" style="flex-grow: 1; min-width: 70%; max-width: 70%;">
-                <ui:MultiColumnListView columns="" sort-column-descriptions="" show-alternating-row-backgrounds="All" name="LeaderboardColumnListView" style="min-height: 100%; background-color: rgba(51, 51, 51, 0.784);">
+                <ui:MultiColumnListView columns="" sort-column-descriptions="" show-alternating-row-backgrounds="All" name="LeaderboardColumnListView" style="min-height: 100%; background-color: rgb(153, 153, 153);">
                     <ui:Columns>
                         <ui:Column name="PlayerName" title="Name" width="40%"/>
                         <ui:Column name="PlayerScore" title="Score" width="20%"/>

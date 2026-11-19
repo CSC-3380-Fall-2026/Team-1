@@ -129,10 +129,14 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 2788681372737056520, guid: 61e0c74b67846cc49a3d413d84ab35b1, type: 3}
       propertyPath: Courses.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2788681372737056520, guid: 61e0c74b67846cc49a3d413d84ab35b1, type: 3}
       propertyPath: 'Courses.Array.data[0]'
+      value: 
+      objectReference: {fileID: 11400000, guid: 581df15eed084417db08475e17deb143, type: 2}
+    - target: {fileID: 2788681372737056520, guid: 61e0c74b67846cc49a3d413d84ab35b1, type: 3}
+      propertyPath: 'Courses.Array.data[1]'
       value: 
       objectReference: {fileID: 11400000, guid: d2a5c11b0027b7a4e9b4fb333c38cf99, type: 2}
     - target: {fileID: 3695376931789218996, guid: 61e0c74b67846cc49a3d413d84ab35b1, type: 3}

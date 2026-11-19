@@ -68,7 +68,7 @@ public class PostGameUIManager : MonoBehaviour
         courseResultsColumnListView.columns["PlayerName"].bindCell = (VisualElement associatedElement, int index) =>
         {
             PlayerResult playerResult = (PlayerResult)courseResultsColumnListView.itemsSource[index];
-            ((Label)associatedElement).text = playerResult.PlayerName.ToString();
+            ((Label)associatedElement).text = playerResult.PlayerName;
         };
 
         courseResultsColumnListView.columns["PlayerScore"].makeCell = () => new Label();
@@ -115,7 +115,7 @@ public class PostGameUIManager : MonoBehaviour
         holeResultsColumnListView.columns["PlayerName"].bindCell = (VisualElement associatedElement, int index) =>
         {
             PlayerResult playerResult = (PlayerResult)holeResultsColumnListView.itemsSource[index];
-            ((Label)associatedElement).text = playerResult.PlayerName.ToString();
+            ((Label)associatedElement).text = playerResult.PlayerName;
         };
 
         holeResultsColumnListView.columns["PlayerScore"].makeCell = () => new Label();

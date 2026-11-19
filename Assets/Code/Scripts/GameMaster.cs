@@ -206,11 +206,20 @@ public class GameMaster : NetworkBehaviour
     /// Adds a result to the results list of every connected client/host/server.
     /// </summary>
     /// <param name="holeIndex">The hole which the record will be inserted.</param>
-    /// <param name="resultToAdd">The record that will be inserted at the given index.</param>
-    [Rpc(SendTo.Everyone)]
-    void AddResultToResultsListRPC(int holeIndex, PlayerResult resultToAdd)
+    /// <param name="playerName">The name of the player with the new result.</param>
+    /// <param name="playerScore">The score attained in the new result.</param>
+    /// <param name="playerHits">The number of hits made stored in this result.</param>
+    /// <param name="PlayerTimeSpent">The amount of time spent that is stored in this result.</param>
+   [Rpc(SendTo.Everyone)]
+    void AddResultToResultsListRPC(int holeIndex, string playerName, float playerScore, int playerHits, float PlayerTimeSpent)
     {
-        PlayerResultRecords[holeIndex].Add(resultToAdd);
+        PlayerResultRecords[holeIndex].Add(new PlayerResult
+        {
+            PlayerName = playerName,
+            PlayerScore = playerScore,
+            PlayerHits = playerHits,
+            PlayerTimeSpent = PlayerTimeSpent
+        });
     }
 
     /// <summary>
@@ -443,13 +452,17 @@ public class GameMaster : NetworkBehaviour
 
             PlayerResult playerHoleResult = new PlayerResult
             {
-                PlayerName = playerWhoOwnsBall.PlayerName,
+                PlayerName = playerWhoOwnsBall.PlayerName.ToString(),
                 PlayerScore = CalculateScore(launchCount, timeSpent),
                 PlayerHits = launchCount,
                 PlayerTimeSpent = timeSpent
             };
 
-            AddResultToResultsListRPC(_currentHoleID, playerHoleResult);
+            AddResultToResultsListRPC(_currentHoleID,
+                playerHoleResult.PlayerName,
+                playerHoleResult.PlayerScore,
+                playerHoleResult.PlayerHits,
+                playerHoleResult.PlayerTimeSpent);
         }
 
         // Deactivates the ball now that it has reached the goal.
