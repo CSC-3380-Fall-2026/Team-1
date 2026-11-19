@@ -181,6 +181,14 @@ public class LeaderboardManager : MonoBehaviour
             }
             else
             {
+                // Short-circuit if the response was empty.
+                if (courseRecordsGETRequest.downloadHandler.text == string.Empty)
+                {
+                    // Lets subscribed parties know that the GET request for the course's leaderboard succeeded.
+                    NetworkRequestCompleted?.Invoke($"Successfully retrieved {courseName}'s leaderboard, but it is empty.");
+                    yield return null;
+                }
+
                 // The course's leaderboard will be sent as a JSON object in the following structure:
                 //  The top-level elements indicate the leaderboard index, where 0 is the cumulative course leaderboard, 1, 2, 3... are holes 1, 2, 3...
                 //  The value at each index is a list of the records in the leaderboard table (a list of key-value pairs).
@@ -223,6 +231,13 @@ public class LeaderboardManager : MonoBehaviour
     /// <returns>An IEnumerator, as this is a coroutine. Null if there was an error.</returns>
     IEnumerator PostResultsToLeaderboard(List<List<PlayerResult>> playerResults, string courseName)
     {
+        // Input validation
+        if (playerResults == null || playerResults.Count == 0 || courseName == string.Empty || courseName == null)
+        {
+            Debug.LogError("Invalid input while trying to post results to the leaderboard.");
+            yield return null;
+        }
+
         // The first list in the supplied player results list is the cumulative course results.
         List<PlayerResult> courseResults = playerResults[0];
         string courseResultsPostRequestPayload = JsonUtility.ToJson(courseResults);
