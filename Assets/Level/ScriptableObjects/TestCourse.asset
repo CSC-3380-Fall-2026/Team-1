@@ -12,6 +12,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a1325f807cf3434aa5f4feab51b7673, type: 3}
   m_Name: TestCourse
   m_EditorClassIdentifier: ChronoShot::Course
+  CourseName: Test Course
   Holes:
   - {fileID: 11400000, guid: e9b4376227e8dc24a91387430f188ca1, type: 2}
-  Difficulty: 0
+  - {fileID: 11400000, guid: e9b4376227e8dc24a91387430f188ca1, type: 2}
+  CoursePreviewImages: []
+  CourseDescription: ' Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer
+    auctor blandit lacus. Donec volutpat vehicula ornare. Integer et enim quis ligula
+    tempus tempus. Donec auctor aliquet lorem, cursus porttitor lectus congue non.
+    Fusce sodales imperdiet est ut dapibus. Proin luctus ultrices est, ultrices mattis
+    purus rutrum sed. Morbi tempus nulla odio, nec pretium dui eleifend non. Pellentesque
+    a dignissim sem. Sed bibendum condimentum erat nec dictum. Curabitur finibus
+    laoreet nunc at posuere. Duis eget magna magna. Morbi ultricies in diam at interdum.
+    Nam nisi odio, semper quis luctus tincidunt, luctus ac odio.  Morbi elit sapien,
+    viverra vel vehicula vel, fringilla quis turpis. Maecenas vehicula, orci vitae
+    ultrices euismod, orci leo porta leo, ac volutpat libero sapien sit amet ante.
+    Aenean lobortis justo tellus, eu scelerisque augue porta laoreet. Vivamus erat
+    est, posuere id odio auctor, ultrices vestibulum nunc. Nam sed pharetra elit.
+    Ut non efficitur velit. Aenean vitae vehicula urna, quis venenatis leo.  Suspendisse
+    aliquet eu quam at auctor. Vivamus hendrerit dapibus justo et mattis. Nulla pellentesque
+    purus pellentesque pulvinar maximus. In ac tellus ligula. Phasellus eu pharetra
+    dolor. Nam scelerisque orci ligula, eget porttitor dui bibendum a. Curabitur
+    feugiat iaculis ligula, mattis egestas neque iaculis congue. Donec iaculis vestibulum
+    nibh at efficitur. Sed at odio sed velit efficitur suscipit. Lorem ipsum dolor
+    sit amet, consectetur adipiscing elit. Duis pulvinar velit neque, sit amet tincidunt
+    est varius sollicitudin. Vivamus ut lorem nulla. Nulla rutrum ex ac leo ultrices,
+    a ultricies magna fringilla. Etiam viverra est sed enim mattis, id iaculis dolor
+    consectetur.'
+  MaxPlayers: 4
+  Difficulty: 1

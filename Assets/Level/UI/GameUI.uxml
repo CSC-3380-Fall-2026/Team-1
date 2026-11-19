@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="GameUIRoot" style="flex-grow: 1;">
+        <ui:VisualElement name="PlayersListContainer" style="flex-grow: 1; min-width: 25%; max-width: 25%; min-height: 25%; max-height: 25%; background-color: rgba(51, 51, 51, 0.784);">
+            <ui:Label text="Players" name="PlayersListTitleLabel" style="align-self: center; background-color: rgba(255, 255, 255, 0); color: rgb(255, 255, 255);"/>
+            <ui:ListView name="PlayersListView" focusable="false" selection-type="None" style="height: 79px; right: auto; bottom: auto; width: 25%; top: 0%; background-color: rgba(51, 51, 51, 0.784); color: rgb(255, 255, 255); max-width: 100%; min-width: 100%;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

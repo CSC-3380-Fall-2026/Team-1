@@ -14,6 +14,10 @@ public class Goal : MonoBehaviour
     /// <param name="otherObjectCollider">The collider component on the object entering the goal area.</param>
     void OnTriggerEnter2D(Collider2D otherObjectCollider)
     {
-        GameMaster.Instance.HandleGoal(otherObjectCollider.gameObject);
+        // Gets a reference to the entering ball's state component to get its ID.
+        BallState enteringBallStateComponent = otherObjectCollider.GetComponent<BallState>();
+
+        // Informs the GameMaster that the ball with the given ID has entered the goal.
+        GameMaster.Instance.HandleGoalRPC(enteringBallStateComponent.BallID.Value);
     }
 }

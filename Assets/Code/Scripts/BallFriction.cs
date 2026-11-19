@@ -1,13 +1,13 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
-
 
 /// <summary>
 /// This will handle the friction forces that is applied to the ball while
 /// it is in contact with objects on the configured friction layers
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
-public class BallFriction : MonoBehaviour
+public class BallFriction : NetworkBehaviour
 {
     // Only objects in these layers will apply friction to the ball
     [Tooltip("Only objects in these layers will apply friction to the ball."), Header("Friction")]
@@ -24,12 +24,15 @@ public class BallFriction : MonoBehaviour
     int _framesToIgnoreFrictionOnLaunch = 3;
 
     /// <summary>
-    /// This is called when the object is instantiaed, before Start() and Update()
-    /// It will also store the ball's Rigidbody2D component so it can be used when calculating
-    /// and applying friction
+    /// This function is called when the NetworkObject has been spawned and all attached NetworkBehaviors have been initialized.
+    /// It stores the ball's Rigidbody2D component so it can be used when calculating and applying friction.
     /// </summary>
-    void Awake()
+    protected override void OnNetworkPostSpawn()
     {
+        // In case the base class' call was essential, as it is an override.
+        base.OnNetworkPostSpawn();
+
+        // Stores a reference to the RigidBody2D component on this object.
         _ballRigidBody = GetComponent<Rigidbody2D>();
 
         // Subscribes to the event called when the ball stops being aimed to ignore friction
@@ -65,8 +68,11 @@ public class BallFriction : MonoBehaviour
             // The force applied to the ball at the point of contact. Remains at zero if the ball is stationary.
             Vector2 frictionForce = Vector2.zero;
 
+            // Adjusts the contact point slightly toward the ball so friction use a point on the ball's rigidbody
+            Vector2 adjustContactPoint = Vector2.MoveTowards(contactPoint.point, _ballRigidBody.position, 0.01f);
+
             // Stores the velocity of the point on the rigidbody where the collision occured. Accounts for linear and angular velocity.
-            Vector2 contactPointVelocity = _ballRigidBody.GetPointVelocity(contactPoint.point);
+            Vector2 contactPointVelocity = _ballRigidBody.GetPointVelocity(adjustContactPoint);
 
             // Avoids needless computation, as no friction needed if the ball is stationary.
             if (contactPointVelocity.magnitude > 0)
@@ -81,10 +87,20 @@ public class BallFriction : MonoBehaviour
                 // Calculates the dynamic friction in the direction opposing motion.
                 // The colliding object's friction value is the coefficient of dynamic friction.
                 frictionForce = contactPoint.collider.friction * normalForceMagnitude * frictionForceDirection;
+
+                // This will prevent friction from applying more force than is needed to stop the ball
+                
+                float maxStoppingForce = (_ballRigidBody.mass * contactPointVelocity.magnitude) / Time.fixedDeltaTime * contactPoint.collider.friction;
+
+                if (frictionForce.magnitude > maxStoppingForce)
+                {
+                    frictionForce = maxStoppingForce * frictionForceDirection;
+                }
+                
             }
             
             // Applies the friction force on the ball's rigidbody at the point of contact.
-            _ballRigidBody.AddForceAtPosition(frictionForce, contactPoint.point);
+            _ballRigidBody.AddForceAtPosition(frictionForce, adjustContactPoint);
         }
     }
 

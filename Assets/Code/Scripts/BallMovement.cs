@@ -1,13 +1,14 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
 /// This component translates player (click/touch) and drag input to a force on the ball.
 /// Only mouse input handled currently, need to know how to get touch input screen coordinates.
-/// Needs visualization, like a line to signal active dragging.
+/// It also contains and raises events related to the ball's turn, motion, grounded and aiming state.
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
-public class BallMovement : MonoBehaviour
+public class BallMovement : NetworkBehaviour
 {
     // Defines states describing whether the ball is in contact with an object on the "Ground" layer or not.
     public enum GroundState
@@ -66,7 +67,7 @@ public class BallMovement : MonoBehaviour
 
     // The number of times the ball has been launched. Reset every hole.
     [Tooltip("The number of times the ball has been launched."), Header ("Launching")]
-    public int LaunchCount = 0;
+    public NetworkVariable<int> LaunchCount = new NetworkVariable<int>(0, writePerm: NetworkVariableWritePermission.Owner);
 
     // The minimum velocity at which the ball will be considered to be moving.
     [SerializeField, Tooltip("The minimum velocity at which the ball will be considered to be moving.")]
@@ -110,11 +111,14 @@ public class BallMovement : MonoBehaviour
     float _aimingTimeRate = 0.2f;
 
     /// <summary>
-    /// Awake is called when the object is instantiated, before Start() and Update().
+    /// This function is called when the NetworkObject has been spawned and all attached NetworkBehaviors have been initialized.
     /// Stores the rigidbody2D component, aiming indicator component and the click action from the Input Actions window for future use.
     /// </summary>
-    void Awake()
+    protected override void OnNetworkPostSpawn()
     {
+        // In case the base class' call was essential, as it is an override.
+        base.OnNetworkPostSpawn();
+
         // Initializes component references.
         _ballRigidBody = GetComponent<Rigidbody2D>();
         _ballFriction = GetComponent<BallFriction>();
@@ -158,7 +162,7 @@ public class BallMovement : MonoBehaviour
 
             // Restores the rate of passage of time to the default value.
             // Maybe move time-rate adjustment to UpdateIndicator function to simplify.
-            GameMaster.Instance.SetTimeRate();
+            GameMaster.Instance.SetTimeRateRPC();
 
             // Calls any function that wants to do something when the ball stops being aimed.
             BallStoppedAiming?.Invoke(false);
@@ -188,11 +192,8 @@ public class BallMovement : MonoBehaviour
             // Done this way to prevent redundant operations and premature setting of _hasHitGroundDuringCurrentLaunch.
             _hasLaunched = false;
 
-            // Calls every function that wants to do something when the ball's turn ends.
-            BallTurnEnded?.Invoke();
-
             // Now that the ball has become stationary and grounded after its launch, end the player's turn, start the next.
-            GameMaster.Instance.NextTurn();
+            GameMaster.Instance.NextTurnRPC();
         }
     }
 
@@ -210,7 +211,7 @@ public class BallMovement : MonoBehaviour
             _aimingLaunch = true;
 
             // Tells the GameMaster slow time to the ball's set value.
-            GameMaster.Instance.SetTimeRate(_aimingTimeRate);
+            GameMaster.Instance.SetTimeRateRPC(_aimingTimeRate);
 
             // Calls every function that wants to do something when this ball begins aiming.
             BallBeganAiming?.Invoke();
@@ -242,8 +243,8 @@ public class BallMovement : MonoBehaviour
             // Allows for checks for ground contact to deny launching until stationary+grounded to begin.
             _hasLaunched = true;
 
-            // Increments the ball's launch count.
-            LaunchCount++;
+            // Increments the ball's launch count. Only the owner should do so to prevent duplicate increases.
+            if (IsOwner) LaunchCount.Value++;
 
             // Calls every function that wants to do something when this ball stops aiming because it got launched.
             BallStoppedAiming?.Invoke(true);
