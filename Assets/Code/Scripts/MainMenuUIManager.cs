@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -13,7 +14,11 @@ public class MainMenuUIManager : MonoBehaviour
 
     // A reference to the UXML file containing the UI of the settings menu.
     [SerializeField, Tooltip("The UXML file containing the settings menu UI.")]
-    VisualTreeAsset _manageProfilesUIAsset;
+    VisualTreeAsset _manageProfilesMenuUIAsset;
+
+    // A reference to the UXML file containing the UI of the leaderboard menu.
+    [SerializeField, Tooltip("The UXML file containing the leaderboard menu's UI.")]
+    VisualTreeAsset _leaderboardMenuUIAsset;
 
     // A reference to the UXML file containing the UI of the settings menu.
     [SerializeField, Tooltip("The UXML file containing the settings menu UI.")]
@@ -67,7 +72,12 @@ public class MainMenuUIManager : MonoBehaviour
         joinLANGameButton.RegisterCallback<ClickEvent>(HandleJoinLANGameButtonClicked);
 
         Button managePlayerProfilesButton = _UIDocumentComponent.rootVisualElement.Query<Button>("ManagePlayerProfilesButton");
+        managePlayerProfilesButton.UnregisterCallback<ClickEvent>(HandleManagePlayerProfilesButtonClicked);
         managePlayerProfilesButton.RegisterCallback<ClickEvent>(HandleManagePlayerProfilesButtonClicked);
+
+        Button leaderboardButton = _UIDocumentComponent.rootVisualElement.Query<Button>("LeaderboardButton");
+        leaderboardButton.UnregisterCallback<ClickEvent>(HandleLeaderboardButtonClicked);
+        leaderboardButton.RegisterCallback<ClickEvent>(HandleLeaderboardButtonClicked);
 
         Button settingsButton = _UIDocumentComponent.rootVisualElement.Query<Button>("SettingsButton");
         settingsButton.UnregisterCallback<ClickEvent>(HandleSettingsButtonClicked);
@@ -142,7 +152,7 @@ public class MainMenuUIManager : MonoBehaviour
     void ShowManageProfilesMenu()
     {
         // Changes the displayed UI asset to the 'manage profiles' UXML file.
-        _UIDocumentComponent.visualTreeAsset = _manageProfilesUIAsset;
+        _UIDocumentComponent.visualTreeAsset = _manageProfilesMenuUIAsset;
 
         // The list of player profiles in the dropdown should update whenever the player profiles list changes.
         // This in turn causes the profile customization section to update as well.
@@ -260,6 +270,170 @@ public class MainMenuUIManager : MonoBehaviour
             Label playerNameLabel = _UIDocumentComponent.rootVisualElement.Query<Label>("PlayerNameLabel");
             playerNameLabel.text = _currentlyEditedPlayerProfile.PlayerName.ToString();
         }
+    }
+
+    /// <summary>
+    /// Handles displaying the leaderboard menu's UI.
+    /// Registers relevant event handlers as well.
+    /// </summary>
+    void ShowLeaderboardMenu()
+    {
+        // Changes the displayed UI to the leaderboard menu.
+        _UIDocumentComponent.visualTreeAsset = _leaderboardMenuUIAsset;
+
+        // Event handler registration.
+        LeaderboardManager.Instance.NetworkRequestStarted -= HandleLeaderboardRefreshRequestStarted;
+        LeaderboardManager.Instance.NetworkRequestStarted += HandleLeaderboardRefreshRequestStarted;
+
+        LeaderboardManager.Instance.NetworkRequestCompleted -= HandleLeaderboardRefreshRequestCompleted;
+        LeaderboardManager.Instance.NetworkRequestCompleted += HandleLeaderboardRefreshRequestCompleted;
+
+        Button mainMenuButton = _UIDocumentComponent.rootVisualElement.Query<Button>("MainMenuButton");
+        mainMenuButton.UnregisterCallback<ClickEvent>(HandleBackToMainMenuButtonClicked);
+        mainMenuButton.RegisterCallback<ClickEvent>(HandleBackToMainMenuButtonClicked);
+
+        Button refreshLeaderboardButton = _UIDocumentComponent.rootVisualElement.Query<Button>("RefreshLeaderboardButton");
+        refreshLeaderboardButton.UnregisterCallback<ClickEvent>(HandleRefreshLeaderboardButtonClicked);
+        refreshLeaderboardButton.RegisterCallback<ClickEvent>(HandleRefreshLeaderboardButtonClicked);
+
+        DropdownField courseSelectionDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("CourseSelectDropdownField");
+        courseSelectionDropdownField.UnregisterValueChangedCallback(HandleCourseSelectionDropdownFieldChanged);
+        courseSelectionDropdownField.RegisterValueChangedCallback(HandleCourseSelectionDropdownFieldChanged);
+
+        DropdownField holeSelectionDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("HoleSelectDropdownField");
+        holeSelectionDropdownField.UnregisterValueChangedCallback(HandleHoleSelectionDropdownFieldChanged);
+        holeSelectionDropdownField.RegisterValueChangedCallback(HandleHoleSelectionDropdownFieldChanged);
+
+        // Initial UI setup. This function sets up the rest of the leaderboard UI in a cascading fashion.
+        ConstructLeaderboardCourseSelectionUI();
+    }
+
+    /// <summary>
+    /// Fills the 'course selection' dropdown menu with the list of courses.
+    /// </summary>
+    void ConstructLeaderboardCourseSelectionUI()
+    {
+        // If the dropdown's choices are not cleared first, its contents may be inaccurate/duplicated.
+        DropdownField courseSelectionDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("CourseSelectDropdownField");
+        courseSelectionDropdownField.choices.Clear();
+
+        // Adds a dropdown choice for every course in the LocalGameData.
+        foreach (Course course in LocalGameData.Instance.Courses)
+            courseSelectionDropdownField.choices.Add(course.CourseName);
+
+        // The dropdown and refresh button should be disabled if there were no courses present.
+        if (courseSelectionDropdownField.choices.Count == 0)
+        {
+            Button refreshLeaderboardButton = _UIDocumentComponent.rootVisualElement.Query<Button>("RefreshLeaderboardButton");
+
+            // This construct function will only be called once (when the leaderboard window is opened).
+            // Therefore, there is no need to enable these at the beginning; they will default to their initial state.
+            refreshLeaderboardButton.SetEnabled(false);
+            courseSelectionDropdownField.SetEnabled(false);
+
+            return;
+        }
+
+        // The dropdown should initialize to the first course on the list.
+        courseSelectionDropdownField.index = 0;
+
+        // Changing the dropdown's index doesn't raise the change event, only if done via the UI.
+        // Therefore, the event handler must be called manually.
+        HandleCourseSelectionDropdownFieldChanged(default);
+    }
+
+    /// <summary>
+    /// Fills the 'hole selection' dropdown menu with the list of holes of the selected course.
+    /// The first option will be the cumulative scores/stats across all of the course's holes.
+    /// </summary>
+    void ConstructLeaderboardHoleSelectionUI()
+    {
+        DropdownField courseSelectionDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("CourseSelectDropdownField");
+        DropdownField holeSelectionDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("HoleSelectDropdownField");
+        Button refreshLeaderboardButton = _UIDocumentComponent.rootVisualElement.Query<Button>("RefreshLeaderboardButton");
+
+        // Events/changes may be ignored if the dropdown field is disabled.
+        holeSelectionDropdownField.SetEnabled(true);
+
+        // Clearing is necessary to avoid inaccurate choices/duplicates.
+        holeSelectionDropdownField.choices.Clear();
+
+        // The first option should be the cumulative scores/stats: the sum of the stats across all the course's holes.
+        holeSelectionDropdownField.choices.Add("Cumulative");
+
+        // After the cumulative option, add an option for every hole, labelled via index.
+        // Index starts at 1, as the cumulative is index 0.
+        Course selectedCourse = LocalGameData.Instance.Courses[courseSelectionDropdownField.index];
+        for (int i = 1; i < selectedCourse.Holes.Length + 1; i++)
+            holeSelectionDropdownField.choices.Add($"Hole {i}");
+
+        // Disables the refresh button and the hole-select dropdown if the list is empty (shouldn't be possible).
+        if (courseSelectionDropdownField.choices.Count == 0)
+        {
+            refreshLeaderboardButton.SetEnabled(false);
+            holeSelectionDropdownField.SetEnabled(false);
+        } else
+            refreshLeaderboardButton.SetEnabled(true);
+
+        // The first value in the list (cumulative) should be selected initially.
+        holeSelectionDropdownField.index = 0;
+
+        // Changing the index via code doesn't raise the change event, only raises if done via UI.
+        // Therefore, the event handler must be called manually.
+        HandleHoleSelectionDropdownFieldChanged(default);
+    }
+
+    /// <summary>
+    /// Updates the leaderboard UI table with the cached leaderboard records for the selected course and hole.
+    /// </summary>
+    void ConstructLeaderboardUI()
+    {
+        // References to dropdown fields are needed so the course name and hole number can be retrieved.
+        // If the selected hole number is 0, the cumulative (course total) leaderboard is returned rather than a specific hole's leaderboard.
+        DropdownField courseSelectionDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("CourseSelectDropdownField");
+        DropdownField holeSelectionDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("HoleSelectDropdownField");
+        string courseName = LocalGameData.Instance.Courses[courseSelectionDropdownField.index].CourseName;
+        int holeNumber = holeSelectionDropdownField.index;
+
+        // Retrieves the list of results for the particular hole.
+        List<PlayerResult> leaderboardRecords = LeaderboardManager.Instance.GetCachedCourseLeaderboard(courseName, holeNumber);
+
+        // By setting the list as the source, added records will be automatically populated with the data at the record's index.
+        MultiColumnListView leaderboardColumnListView = _UIDocumentComponent.rootVisualElement.Query<MultiColumnListView>("LeaderboardColumnListView");
+        leaderboardColumnListView.itemsSource = leaderboardRecords;
+
+        // Constructs the columns by pointing the fields at the appropriate values.
+        leaderboardColumnListView.columns["PlayerName"].makeCell = () => new Label();
+        leaderboardColumnListView.columns["PlayerName"].bindCell = (VisualElement associatedElement, int index) =>
+        {
+            PlayerResult playerResult = (PlayerResult)leaderboardColumnListView.itemsSource[index];
+            ((Label)associatedElement).text = playerResult.PlayerName.ToString();
+        };
+
+        leaderboardColumnListView.columns["PlayerScore"].makeCell = () => new Label();
+        leaderboardColumnListView.columns["PlayerScore"].bindCell = (VisualElement associatedElement, int index) =>
+        {
+            PlayerResult playerResult = (PlayerResult)leaderboardColumnListView.itemsSource[index];
+            ((Label)associatedElement).text = playerResult.PlayerScore.ToString();
+        };
+
+        leaderboardColumnListView.columns["PlayerHits"].makeCell = () => new Label();
+        leaderboardColumnListView.columns["PlayerHits"].bindCell = (VisualElement associatedElement, int index) =>
+        {
+            PlayerResult playerResult = (PlayerResult)leaderboardColumnListView.itemsSource[index];
+            ((Label)associatedElement).text = playerResult.PlayerHits.ToString();
+        };
+
+        leaderboardColumnListView.columns["PlayerTimeSpent"].makeCell = () => new Label();
+        leaderboardColumnListView.columns["PlayerTimeSpent"].bindCell = (VisualElement associatedElement, int index) =>
+        {
+            PlayerResult playerResult = (PlayerResult)leaderboardColumnListView.itemsSource[index];
+
+            // Displays the time in a '#m #s' format.
+            string timeString = $"{(int)(playerResult.PlayerTimeSpent / 60)}m {(int)(playerResult.PlayerTimeSpent % 60)}s";
+
+            ((Label)associatedElement).text = timeString;
+        };
     }
 
     /// <summary>
@@ -431,6 +605,74 @@ public class MainMenuUIManager : MonoBehaviour
         TextField newProfileNameTextField = _UIDocumentComponent.rootVisualElement.Query<TextField>("NewPlayerNameTextField");
         Player newPlayer = new Player {PlayerName = newProfileNameTextField.value};
         LocalGameData.Instance.AddPlayerProfile(newPlayer);
+    }
+
+    /// <summary>
+    /// Handler for the click event raised when the 'leaderboard' button is clicked.
+    /// Loads the leaderboard UI.
+    /// </summary>
+    /// <param name="clickEventInfo">Contains information about the button's click event.</param>
+    void HandleLeaderboardButtonClicked(ClickEvent clickEventInfo)
+    {
+        ShowLeaderboardMenu();
+    }
+
+    /// <summary>
+    /// Handler for the change event raised when the player selects a new option in the 'course selection' dropdown.
+    /// Reconstructs the dropdown for the list of holes.
+    /// </summary>
+    /// <param name="changeEventInfo">Contains information about the dropdown's change event.</param>
+    void HandleCourseSelectionDropdownFieldChanged(ChangeEvent<string> changeEventInfo)
+    {
+        ConstructLeaderboardHoleSelectionUI();
+    }
+
+    /// <summary>
+    /// Handler for the change event raised when the player selects a new option in the 'hole selection' dropdown.
+    /// Reconstructs the leaderboard UI itself, adding the cumulative/hole's records.
+    /// </summary>
+    /// <param name="changeEventInfo">Contains information about the dropdown's change event.</param>
+    void HandleHoleSelectionDropdownFieldChanged(ChangeEvent<string> changeEventInfo)
+    {
+        ConstructLeaderboardUI();
+    }
+
+    /// <summary>
+    /// Handler for the click event raised when the 'refresh leaderboard' button is clicked.
+    /// Tells the LeaderboardManager to retrieve the course's leaderboard data from the database.
+    /// </summary>
+    /// <param name="clickEventInfo">Contains information about the button's click event.</param>
+    void HandleRefreshLeaderboardButtonClicked(ClickEvent clickEventInfo)
+    {
+        DropdownField courseSelectionDropdownField = _UIDocumentComponent.rootVisualElement.Query<DropdownField>("CourseSelectDropdownField");
+        string courseName = LocalGameData.Instance.Courses[courseSelectionDropdownField.index].CourseName;
+
+        // Performs the GET request to the leaderboard API.
+        LeaderboardManager.Instance.GetCourseLeaderboard(courseName);
+    }
+
+    /// <summary>
+    /// Handler for the event raised when the LeaderboardManager begins sending a request to the web server.
+    /// Disables the refresh button to prevent duplicate requests.
+    /// </summary>
+    void HandleLeaderboardRefreshRequestStarted()
+    {
+        Button refreshLeaderboardButton = _UIDocumentComponent.rootVisualElement.Query<Button>("RefreshLeaderboardButton");
+        refreshLeaderboardButton.SetEnabled(false);
+    }
+
+    /// <summary>
+    /// Handler for the event raised when the LeaderboardManager receives the response from the web server.
+    /// Re-enables the refresh button now that the player should be allowed to resend the request and reconstructs the leaderboard UI.
+    /// </summary>
+    /// <param name="resultMessage">Describes the result of the request operation.</param>
+    void HandleLeaderboardRefreshRequestCompleted(string resultMessage)
+    {
+        Button refreshLeaderboardButton = _UIDocumentComponent.rootVisualElement.Query<Button>("RefreshLeaderboardButton");
+        refreshLeaderboardButton.SetEnabled(true);
+
+        // The leaderboard cache has been updated with the course's leaderboard, so update UI.
+        ConstructLeaderboardUI();
     }
 
     /// <summary>

@@ -36,7 +36,7 @@ public class LeaderboardManager : MonoBehaviour
     // Previously retrieved leaderboards will be stored here to avoid having to request it whenever the UI changes.
     // Course leaderboards are stored with "<courseName>.<holeNumber>" as the key, where holeNumber 0 is the general
     // course leaderboard, holeNumber 1 is the leaderboard for hole 1, etc.
-    Dictionary<string, List<PlayerResult>> cachedLeaderboardRecords;
+    public Dictionary<string, List<PlayerResult>> _cachedLeaderboardRecords = new Dictionary<string, List<PlayerResult>>();
 
     // A request that returns a code with this value will be treated as a successful request.
     const long _requestSuccessCode = 200;
@@ -92,12 +92,45 @@ public class LeaderboardManager : MonoBehaviour
         return courseResults;
     }
 
-    void GetCourseLeaderboard(string courseName, bool overwrite = false)
+    /// <summary>
+    /// Provides a way for other classes to instruct the LeaderboardMnager to get a given course's leaderboard.
+    /// </summary>
+    /// <param name="courseName">The name of the course whose leaderboard should be retrieved.</param>
+    public void GetCourseLeaderboard(string courseName)
     {
-        if (!overwrite && cachedLeaderboardRecords.ContainsKey(courseName))
+        // Input validation.
+        if (courseName == string.Empty || courseName == null)
+        {
+            Debug.LogError($"Supplied an invalid name (empty or null) when trying to get a course leaderboard.");
             return;
+        }
 
+        // This process runs asynchronously. Its state is reported via delegates.
         StartCoroutine(GetCourseRecordsFromLeaderboard(courseName));
+    }
+
+    /// <summary>
+    /// Searches the leaderboard cache for a cumulative course/specific hole leaderboard and returns it.
+    /// </summary>
+    /// <param name="courseName">The name of the course related to the wanted leaderboard.</param>
+    /// <param name="holeNumber">The hole number of the wanted leaderboard. 0 is for the cumulative course, 1+ for holes.</param>
+    /// <returns>A list of the player results retrieved from the cache for the specified course/hole.</returns>
+    public List<PlayerResult> GetCachedCourseLeaderboard(string courseName, int holeNumber)
+    {
+        // Input validation.
+        // Rather than failing, an empty list is returned instead.
+        if (courseName == string.Empty || courseName == null)
+            return new List<PlayerResult>();
+
+        // In the cache dictionary, the keys are formatted in a <courseName>.<holeNumber> format, where hole number 0 returns the
+        // cumulative course stats (sum of stats across all holes in the course).
+        string leaderboardKey = $"{courseName}.{holeNumber}";
+
+        // Returns the list if found, empty list if not.
+        if (_cachedLeaderboardRecords.ContainsKey(leaderboardKey))
+            return _cachedLeaderboardRecords[leaderboardKey];
+        else
+            return new List<PlayerResult>();
     }
 
     /// <summary>
@@ -172,7 +205,7 @@ public class LeaderboardManager : MonoBehaviour
                             PlayerTimeSpent = (float)rawCourseRecord["time_spent"]
                         });
 
-                    cachedLeaderboardRecords[keyInCachedLeaderboardsDictionary] = resultsList;
+                    _cachedLeaderboardRecords[keyInCachedLeaderboardsDictionary] = resultsList;
                 }
 
                 // Lets subscribed parties know that the GET request for the course's leaderboard succeeded.

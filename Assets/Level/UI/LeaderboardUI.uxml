@@ -1,0 +1,25 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="LeaderboardRoot" style="flex-grow: 1; background-color: rgb(166, 166, 166);">
+        <ui:Label text="Leaderboard" name="TitleLabel" style="-unity-text-align: upper-center; font-size: 32px; -unity-font-style: bold;"/>
+        <ui:VisualElement name="LeaderboardContainer" style="flex-grow: 1; min-height: 70%; max-height: 70%; flex-direction: row; min-width: 85%; max-width: 85%; align-self: center;">
+            <ui:VisualElement name="CourseHoleSelectionContainer" style="flex-grow: 1; justify-content: space-around; min-height: 45%; max-height: 45%; align-self: center;">
+                <ui:DropdownField label="" name="CourseSelectDropdownField"/>
+                <ui:DropdownField label="" name="HoleSelectDropdownField"/>
+                <ui:Button text="Refresh" name="RefreshLeaderboardButton"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="LeaderboardDisplayContainer" style="flex-grow: 1; min-width: 70%; max-width: 70%;">
+                <ui:MultiColumnListView columns="" sort-column-descriptions="" show-alternating-row-backgrounds="All" name="LeaderboardColumnListView" style="min-height: 100%; background-color: rgba(51, 51, 51, 0.784);">
+                    <ui:Columns>
+                        <ui:Column name="PlayerName" title="Name" width="40%"/>
+                        <ui:Column name="PlayerScore" title="Score" width="20%"/>
+                        <ui:Column name="PlayerHits" title="Hits" width="20%"/>
+                        <ui:Column name="PlayerTimeSpent" title="Time" width="20%"/>
+                    </ui:Columns>
+                </ui:MultiColumnListView>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="NavigationButtonsContainer" style="flex-grow: 1; bottom: 5%; position: absolute; flex-direction: row; justify-content: space-around; min-width: 80%; align-self: center; max-width: 80%;">
+            <ui:Button text="Main Menu" name="MainMenuButton"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
