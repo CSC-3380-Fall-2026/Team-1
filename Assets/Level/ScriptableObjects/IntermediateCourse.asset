@@ -12,9 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a1325f807cf3434aa5f4feab51b7673, type: 3}
   m_Name: IntermediateCourse
   m_EditorClassIdentifier: ChronoShot::Course
-  CourseName: IntermediateCourse
-  Holes: []
+  CourseName: Intermediate Course
+  Holes:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   CoursePreviewImages: []
   CourseDescription: More challenging.
   MaxPlayers: 4
-  Difficulty: 1
+  Difficulty: 3
