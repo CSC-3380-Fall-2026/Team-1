@@ -14,9 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChronoShot::Course
   CourseName: Test Course
   Holes:
-  - {fileID: 11400000, guid: fb1574a1034844d01aff90fd9fec1af7, type: 2}
-  - {fileID: 11400000, guid: 96596c12fae688249819591932c448ba, type: 2}
-  - {fileID: 11400000, guid: 37bcfe20bb5924e0295864c938d4ff19, type: 2}
+  - {fileID: 11400000, guid: e9b4376227e8dc24a91387430f188ca1, type: 2}
+  - {fileID: 11400000, guid: e9b4376227e8dc24a91387430f188ca1, type: 2}
   CoursePreviewImages: []
   CourseDescription: ' Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer
     auctor blandit lacus. Donec volutpat vehicula ornare. Integer et enim quis ligula

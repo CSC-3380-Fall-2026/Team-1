@@ -23,7 +23,8 @@ public class GameMaster : NetworkBehaviour
     public enum GameState
     {
         Lobby,
-        Game
+        Game,
+        Results
     }
 
     // The current state of the game. Currently only used to deny new players when not in Lobby state.
@@ -52,6 +53,11 @@ public class GameMaster : NetworkBehaviour
     // When changing turns, all the server does is change this value. Clients handle resulting behavior.
     [HideInInspector]
     public NetworkVariable<int> CurrentPlayerTurn = new NetworkVariable<int>(0);
+
+    // This is a list of the scoring results of all the players, per hole.
+    // Initialized when a course is set.
+    [HideInInspector]
+    public List<List<PlayerResult>> PlayerResultRecords {private set; get;}
 
     // The balls in the current map. Ball index should match player index.
     // Each client maintains a local copy of this list, as entire GameObjects are too large to synchronize.
@@ -194,6 +200,35 @@ public class GameMaster : NetworkBehaviour
         return (float)(_currentHole.BaseScore *
             Mathf.Pow(_currentHole.ShotCountScoreFactor, shotCount) *
             Mathf.Pow(_currentHole.TimeSpentScoreFactor, timeSpent));
+    }
+
+    /// <summary>
+    /// Adds a result to the results list of every connected client/host/server.
+    /// </summary>
+    /// <param name="holeIndex">The hole which the record will be inserted.</param>
+    /// <param name="playerName">The name of the player with the new result.</param>
+    /// <param name="playerScore">The score attained in the new result.</param>
+    /// <param name="playerHits">The number of hits made stored in this result.</param>
+    /// <param name="PlayerTimeSpent">The amount of time spent that is stored in this result.</param>
+   [Rpc(SendTo.Everyone)]
+    void AddResultToResultsListRPC(int holeIndex, string playerName, float playerScore, int playerHits, float PlayerTimeSpent)
+    {
+        PlayerResultRecords[holeIndex].Add(new PlayerResult
+        {
+            PlayerName = playerName,
+            PlayerScore = playerScore,
+            PlayerHits = playerHits,
+            PlayerTimeSpent = PlayerTimeSpent
+        });
+    }
+
+    /// <summary>
+    /// Inserts a list of results into the results list of every connected client/host/server, at the specified position.
+    /// </summary>
+    [Rpc(SendTo.Everyone)]
+    void AddCumulativeCourseResultsRPC()
+    {
+        PlayerResultRecords.Insert(0, LeaderboardManager.GetCourseResultsFromHoleResults(PlayerResultRecords));
     }
 
     /// <summary>
@@ -381,11 +416,10 @@ public class GameMaster : NetworkBehaviour
         // Will move to specific scene for scoring and the leaderboard in the future. For now, just prints score info.
         if (_currentHoleID >= CurrentCourse.Holes.Length)
         {
-            Debug.Log("All players have completed the course.");
+            // No more scores will be added, so calculate and add the cumulative course results to the record.
+            AddCumulativeCourseResultsRPC();
 
-            // Prints each player's score info as a debug log.
-            foreach (Player player in Players)
-                Debug.Log($"{player.PlayerName}'s score: {player.PlayerScore}. Hits: {player.PlayerHits}. Time Spent: {player.PlayerTimeSpent}");
+            NetworkManager.Singleton.SceneManager.LoadScene("PostGame", LoadSceneMode.Single);
 
             return;
         }
@@ -413,16 +447,22 @@ public class GameMaster : NetworkBehaviour
             int launchCount = ballThatEnteredHoleMovementComponent.LaunchCount.Value;
             float timeSpent = ballThatEnteredHoleTimeManagerComponent.TimeSpentInPlay.Value;
 
-            // Players structs in the players NetworkList cannot be changed directly, but can be set to a new Player.
-            // Creates a new player struct based on the old player, sets the new score and replaces the old one with it.
+            // A new scoring record will be made and stored using the ball's stats. 
             Player playerWhoOwnsBall = Players[ballThatEnteredHoleID];
-            playerWhoOwnsBall.PlayerHits += launchCount;
-            playerWhoOwnsBall.PlayerTimeSpent += timeSpent;
-            playerWhoOwnsBall.PlayerScore += CalculateScore(launchCount, timeSpent);
-            Players[ballThatEnteredHoleID] = playerWhoOwnsBall;
 
-            // To be replaced with UI visuals when we get there.
-            Debug.LogFormat("Player: {0}, Launches: {1}, Time Spent: {2}, Score: {3}", ballThatEnteredHoleID, launchCount, timeSpent, Players[ballThatEnteredHoleID].PlayerScore);
+            PlayerResult playerHoleResult = new PlayerResult
+            {
+                PlayerName = playerWhoOwnsBall.PlayerName.ToString(),
+                PlayerScore = CalculateScore(launchCount, timeSpent),
+                PlayerHits = launchCount,
+                PlayerTimeSpent = timeSpent
+            };
+
+            AddResultToResultsListRPC(_currentHoleID,
+                playerHoleResult.PlayerName,
+                playerHoleResult.PlayerScore,
+                playerHoleResult.PlayerHits,
+                playerHoleResult.PlayerTimeSpent);
         }
 
         // Deactivates the ball now that it has reached the goal.
@@ -461,13 +501,12 @@ public class GameMaster : NetworkBehaviour
         }
 
         // Makes a new player struct with the given information.
-        Player newPlayer = new Player();
-        newPlayer.PlayerName = playerName;
-        newPlayer.PlayerClientID = playerClientID;
-        newPlayer.PlayerGUID = playerGUID;
-        newPlayer.PlayerScore = 0;
-        newPlayer.PlayerHits = 0;
-        newPlayer.PlayerTimeSpent = 0;
+        Player newPlayer = new Player()
+        {
+            PlayerName = playerName,
+            PlayerClientID = playerClientID,
+            PlayerGUID = playerGUID
+        };
 
         // Adds the player to the players list, automatically synchronizing across connected clients.
         Players.Add(newPlayer);
@@ -554,6 +593,11 @@ public class GameMaster : NetworkBehaviour
             if (course.CourseName == newName)
             {
                 CurrentCourse = course;
+
+                // Need to initialize the results array to allow for seamless insertion.
+                PlayerResultRecords = new List<List<PlayerResult>>(CurrentCourse.Holes.Length);
+                for (int i = 0; i < CurrentCourse.Holes.Length; i++)
+                    PlayerResultRecords.Add(new List<PlayerResult>());
                 return;
             }
         }

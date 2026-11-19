@@ -21,6 +21,7 @@
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:Button text="Manage Player Profiles" name="ManagePlayerProfilesButton"/>
+            <ui:Button text="Leaderboard" name="LeaderboardButton"/>
             <ui:Button text="Settings" name="SettingsButton"/>
             <ui:Button text="Quit" name="QuitButton"/>
         </ui:VisualElement>

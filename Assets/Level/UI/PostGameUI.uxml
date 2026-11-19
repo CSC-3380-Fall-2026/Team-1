@@ -1,0 +1,32 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="PostGameUIRoot" style="flex-grow: 1; background-color: rgb(166, 166, 166);">
+        <ui:Label text="Results" name="TitleLabel" style="-unity-text-align: upper-center; font-size: 32px; -unity-font-style: bold;"/>
+        <ui:VisualElement name="ResultsContainer" style="flex-grow: 1; min-width: 80%; max-width: 80%; min-height: 65%; max-height: 65%; align-self: center;">
+            <ui:VisualElement name="CourseResultsContainer" style="flex-grow: 1; align-self: center; width: auto; min-width: 80%; max-width: 80%; min-height: 40%; max-height: 40%;">
+                <ui:MultiColumnListView columns="" sort-column-descriptions="" horizontal-scrolling="true" name="CourseResultsColumnListView" style="min-height: 100%;">
+                    <ui:Columns primary-column-name="">
+                        <ui:Column name="PlayerName" title="Name" width="40%"/>
+                        <ui:Column name="PlayerScore" title="Score" width="20%"/>
+                        <ui:Column name="PlayerHits" title="Hits" width="20%"/>
+                        <ui:Column name="PlayerTimeSpent" title="Time" width="20%"/>
+                    </ui:Columns>
+                </ui:MultiColumnListView>
+            </ui:VisualElement>
+            <ui:DropdownField label="" name="HoleSelectDropdownField" style="margin-bottom: 20px; margin-top: 20px;"/>
+            <ui:VisualElement name="HoleResultsContainer" style="flex-grow: 1; align-self: center; width: auto; min-width: 80%; max-width: 80%; min-height: 40%; max-height: 40%;">
+                <ui:MultiColumnListView columns="" sort-column-descriptions="" horizontal-scrolling="true" name="HoleResultsColumnListView" style="min-height: 100%;">
+                    <ui:Columns primary-column-name="">
+                        <ui:Column name="PlayerName" title="Name" width="40%"/>
+                        <ui:Column name="PlayerScore" title="Score" width="20%"/>
+                        <ui:Column name="PlayerHits" title="Hits" width="20%"/>
+                        <ui:Column name="PlayerTimeSpent" title="Time" width="20%"/>
+                    </ui:Columns>
+                </ui:MultiColumnListView>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="ButtonsContainer" style="flex-grow: 1; flex-direction: row; justify-content: space-around; min-width: 75%; max-width: 75%; min-height: 15%; max-height: 15%; align-self: center; position: absolute; bottom: 5%;">
+            <ui:Button text="Main Menu" name="MainMenuButton" style="min-width: 25%; max-width: 25%;"/>
+            <ui:Button text="Send Scores to&#10;Leaderboard" name="SendToLeaderboardButton" style="min-width: 25%; max-width: 25%;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

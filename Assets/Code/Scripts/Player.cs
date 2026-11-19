@@ -27,15 +27,6 @@ public struct Player : INetworkSerializable, IEquatable<Player>
     // The ClientID could change when reconnecting, while the GUID will be constant for the game's duration.
     public FixedString64Bytes PlayerGUID;
 
-    // The player's score on the current course.
-    public float PlayerScore;
-
-    // The amount of time the player has spent in the current course.
-    public float PlayerTimeSpent;
-
-    // The amount of times the player launched the ball in the current course.
-    public int PlayerHits;
-
     // Later, a reference to a ScriptableObject with cosmetic choices.
     // Maybe a reference to a settings object for player-specific settings.
 
@@ -49,9 +40,6 @@ public struct Player : INetworkSerializable, IEquatable<Player>
         bufferSerializer.SerializeValue(ref PlayerName);
         bufferSerializer.SerializeValue(ref PlayerClientID);
         bufferSerializer.SerializeValue(ref PlayerGUID);
-        bufferSerializer.SerializeValue(ref PlayerScore);
-        bufferSerializer.SerializeValue(ref PlayerTimeSpent);
-        bufferSerializer.SerializeValue(ref PlayerHits);
     }
 
     /// <summary>
@@ -65,9 +53,6 @@ public struct Player : INetworkSerializable, IEquatable<Player>
         if (PlayerName != otherPlayer.PlayerName) return false;
         if (PlayerClientID != otherPlayer.PlayerClientID) return false;
         if (PlayerGUID != otherPlayer.PlayerGUID) return false;
-        if (PlayerScore != otherPlayer.PlayerScore) return false;
-        if (PlayerTimeSpent != otherPlayer.PlayerTimeSpent) return false;
-        if (PlayerHits != otherPlayer.PlayerHits) return false;
 
         // Returns true if the function survived all the previous comparisons.
         return true;
