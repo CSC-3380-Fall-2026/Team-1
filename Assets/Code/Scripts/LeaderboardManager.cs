@@ -238,54 +238,21 @@ public class LeaderboardManager : MonoBehaviour
             yield return null;
         }
 
-        // The first list in the supplied player results list is the cumulative course results.
-        List<PlayerResult> courseResults = playerResults[0];
-        string courseResultsPostRequestPayload = JsonUtility.ToJson(courseResults);
-
         // Can serialize the list of player hole results easily since PlayerResult only contains serializable values.
-        List<string> holeResultsPostRequestPayloads = new List<string>(playerResults.Count - 1);
+        List<string> resultsPostRequestPayloads = new List<string>(playerResults.Count);
 
-        // The first list of results is the cumulative course results list, so for hole-specific start at 1, not 0.
-        for (int i = 1; i < playerResults.Count; i++)
-            holeResultsPostRequestPayloads.Add(JsonUtility.ToJson(playerResults[i]));
-
-        // This URI tells the web server to accept a json message with the additions to the leaderboards.
-        Uri courseResultsURI = new Uri($"http://{_leaderboardAddress}{_courseResultsAccessPrefix}/{courseName}");
-
-        // Lets subscribed parties know that a network request is just about to begin.
-        NetworkRequestStarted?.Invoke();
-
-        // This POST request will send the cumulative player results, not the per-hole ones.
-        using (UnityWebRequest courseTotalScoresPostRequest = UnityWebRequest.Post(
-            courseResultsURI,
-            courseResultsPostRequestPayload,
-            "application/json"))
-        {
-            // This is asynchronous, so normal execution of the game will continue until a response is received, at
-            // which point the rest of the function will be executed.
-            yield return courseTotalScoresPostRequest.SendWebRequest();
-
-            if (courseTotalScoresPostRequest.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogError(courseTotalScoresPostRequest.error);
-
-                // Lets subscribed parties know that the POST request to the course's leaderboard failed.
-                NetworkRequestCompleted?.Invoke($"Failed to upload cumulative results to {courseName}'s leaderboard.");
-
-                yield return null;
-            }
-            else
-                Debug.Log("Uploaded course total results to the leaderboard successfully.");
-        }
+        // The first list of results is the cumulative course results list; the rest are hole-specific.
+        for (int i = 0; i < playerResults.Count; i++)
+            resultsPostRequestPayloads.Add(JsonUtility.ToJson(playerResults[i]));
 
         // Makes and sends POST requests for each hole's player results.
-        for (int holeIndex = 0; holeIndex < holeResultsPostRequestPayloads.Count; holeIndex++)
+        for (int holeNumber = 0; holeNumber < resultsPostRequestPayloads.Count; holeNumber++)
         {
-            Uri holeResultsURI = new Uri($"http://{_leaderboardAddress}{_courseResultsAccessPrefix}/{courseName}/{holeIndex}");
+            Uri holeResultsURI = new Uri($"http://{_leaderboardAddress}{_courseResultsAccessPrefix}/{courseName}/{holeNumber}");
 
             using (UnityWebRequest holeScoresPostRequest = UnityWebRequest.Post(
                 holeResultsURI,
-                holeResultsPostRequestPayloads[holeIndex],
+                resultsPostRequestPayloads[holeNumber],
                 "application/json"
             ))
             {
@@ -298,12 +265,10 @@ public class LeaderboardManager : MonoBehaviour
                     Debug.LogError(holeScoresPostRequest.error);
 
                     // Lets subscribed parties know that the POST request for the course's leaderboard failed.
-                    NetworkRequestCompleted?.Invoke($"Failed to upload hole {holeIndex}'s results to {courseName}'s leaderboard.");
+                    NetworkRequestCompleted?.Invoke($"Failed to upload hole {holeNumber}'s results to {courseName}'s leaderboard.");
 
                     yield return null;
                 }
-                else
-                    Debug.Log($"Uploaded hole {holeIndex} results to the leaderboard successfully.");
             }
         }
 

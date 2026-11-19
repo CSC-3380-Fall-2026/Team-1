@@ -45,4 +45,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: ChronoShot::LeaderboardManager
   _leaderboardAddress: 13.184.191.254
-  _courseResultsAccessPrefix: /leaderboard/
+  _courseResultsAccessPrefix: /leaderboard
