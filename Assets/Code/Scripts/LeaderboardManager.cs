@@ -9,6 +9,22 @@ using UnityEngine.Networking;
 /// </summary>
 public class LeaderboardManager : MonoBehaviour
 {
+    // A LeaderboardManager singleton.
+    // Makes it easier for the UI to work with this object.
+    public static LeaderboardManager Instance {private set; get;}
+
+    // This event is raised whenever this component begins a GET/POST request.
+    // Those are asynchronous coroutines, so the UI and other interested parties need
+    // to know when they start (e.g. to disable buttons until the request completes).
+    public delegate void NetworkRequestStartedEvent();
+    public NetworkRequestStartedEvent NetworkRequestStarted;
+
+    // This event is raised whenever a GET/POST request made by this component concludes.
+    // Those are asynchronous coroutines, so the UI and other interesed parties need to
+    // know when they end (e.g. to enable relevant buttons or display request status).
+    public delegate void NetworkRequestCompletedEvent(string requestStatusMessage);
+    public NetworkRequestCompletedEvent NetworkRequestCompleted;
+
     // The IP address/hostname of the web server hosting the api that handles leaderboard requests
     [SerializeField, Tooltip("The IP/hostname of the leaderboard api web server.")]
     string _leaderboardAddress;
@@ -26,13 +42,26 @@ public class LeaderboardManager : MonoBehaviour
     const long _requestSuccessCode = 200;
 
     /// <summary>
+    /// This function is called when the object is first instantiated, before any objects' Start() calls.
+    /// Initializes singleton.
+    /// </summary>
+    void Awake()
+    {
+        // Singleton handling.
+        if (Instance != null && Instance != this)
+            Destroy(this);
+        else
+            Instance = this;
+    }
+
+    /// <summary>
     /// Generates a list of each player's cumulative score records across all holes in a course.
     /// The players' score records per hole are collected by the GameMaster, but not the cumulative.
     /// That will be generated here.
     /// </summary>
     /// <param name="playerResults">A list of the results of each player in a course in each hole.</param>
     /// <returns>A list of player results containing the combined scoring fields across all holes.</returns>
-    List<PlayerResult> GetCourseResultsFromHoleResults(List<List<PlayerResult>> playerResults)
+    public static List<PlayerResult> GetCourseResultsFromHoleResults(List<List<PlayerResult>> playerResults)
     {
         int playerCount = playerResults[0].Count;
         int holeCount = playerResults.Count;
@@ -72,6 +101,16 @@ public class LeaderboardManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Provides a way for other classes to instruct the LeaderboardManager to post given results to the leaderboard.
+    /// </summary>
+    /// <param name="playerResults">The list of player score stats for each hole.</param>
+    /// <param name="courseName">The name of the course the results were achieved on.</param>
+    public void SendResultsToLeaderboard(List<List<PlayerResult>> playerResults, string courseName)
+    {
+        StartCoroutine(PostResultsToLeaderboard(playerResults, courseName));
+    }
+
+    /// <summary>
     /// Retrieves the leaderboard of a course and all its holes from the database.
     /// The results are stored in the cache with the key being <courseName>.<holeNumber>, where holeNumber 0 is
     /// the player's cumulative stats across all the holes and and 1, 2, 3... is the player's stats for hole 1, 2, 3...
@@ -92,13 +131,21 @@ public class LeaderboardManager : MonoBehaviour
 
         using (UnityWebRequest courseRecordsGETRequest = UnityWebRequest.Get(courseRecordsRequestURI))
         {
+            // Lets subscribed parties know that a network request is just about to begin.
+            NetworkRequestStarted?.Invoke();
+
             // This is asynchronous, so normal execution of the game will continue until a response is received, at
             // which point the rest of the function will be executed.
             yield return courseRecordsGETRequest.SendWebRequest();
 
             // Anything other than the successful response code indicates an error.
             if (courseRecordsGETRequest.responseCode != _requestSuccessCode)
+            {
                 Debug.LogError(courseRecordsGETRequest.error);
+
+                // Lets subscribed parties know that the GET request for the course's leaderboard failed.
+                NetworkRequestCompleted?.Invoke($"Failed to retrieve {courseName}'s leaderboard.");
+            }
             else
             {
                 // The course's leaderboard will be sent as a JSON object in the following structure:
@@ -127,6 +174,9 @@ public class LeaderboardManager : MonoBehaviour
 
                     cachedLeaderboardRecords[keyInCachedLeaderboardsDictionary] = resultsList;
                 }
+
+                // Lets subscribed parties know that the GET request for the course's leaderboard succeeded.
+                NetworkRequestCompleted?.Invoke($"Successfully retrieved {courseName}'s leaderboard.");
             }
         }
     }
@@ -140,17 +190,22 @@ public class LeaderboardManager : MonoBehaviour
     /// <returns>An IEnumerator, as this is a coroutine. Null if there was an error.</returns>
     IEnumerator PostResultsToLeaderboard(List<List<PlayerResult>> playerResults, string courseName)
     {
-        // The supplied list of hole results doesn't include the cumulative course score, so need to make one.
-        List<PlayerResult> courseResults = GetCourseResultsFromHoleResults(playerResults);
+        // The first list in the supplied player results list is the cumulative course results.
+        List<PlayerResult> courseResults = playerResults[0];
         string courseResultsPostRequestPayload = JsonUtility.ToJson(courseResults);
 
         // Can serialize the list of player hole results easily since PlayerResult only contains serializable values.
-        List<string> holeResultsPostRequestPayloads = new List<string>(playerResults.Count);
-        foreach (List<PlayerResult> holeResults in playerResults)
-            holeResultsPostRequestPayloads.Add(JsonUtility.ToJson(holeResults));
+        List<string> holeResultsPostRequestPayloads = new List<string>(playerResults.Count - 1);
+
+        // The first list of results is the cumulative course results list, so for hole-specific start at 1, not 0.
+        for (int i = 1; i < playerResults.Count; i++)
+            holeResultsPostRequestPayloads.Add(JsonUtility.ToJson(playerResults[i]));
 
         // This URI tells the web server to accept a json message with the additions to the leaderboards.
         Uri courseResultsURI = new Uri($"http://{_leaderboardAddress}{_courseResultsAccessPrefix}/{courseName}");
+
+        // Lets subscribed parties know that a network request is just about to begin.
+        NetworkRequestStarted?.Invoke();
 
         // This POST request will send the cumulative player results, not the per-hole ones.
         using (UnityWebRequest courseTotalScoresPostRequest = UnityWebRequest.Post(
@@ -165,6 +220,10 @@ public class LeaderboardManager : MonoBehaviour
             if (courseTotalScoresPostRequest.result != UnityWebRequest.Result.Success)
             {
                 Debug.LogError(courseTotalScoresPostRequest.error);
+
+                // Lets subscribed parties know that the POST request to the course's leaderboard failed.
+                NetworkRequestCompleted?.Invoke($"Failed to upload cumulative results to {courseName}'s leaderboard.");
+
                 yield return null;
             }
             else
@@ -187,10 +246,20 @@ public class LeaderboardManager : MonoBehaviour
                 yield return holeScoresPostRequest.SendWebRequest();
 
                 if (holeScoresPostRequest.result != UnityWebRequest.Result.Success)
+                {
                     Debug.LogError(holeScoresPostRequest.error);
+
+                    // Lets subscribed parties know that the POST request for the course's leaderboard failed.
+                    NetworkRequestCompleted?.Invoke($"Failed to upload hole {holeIndex}'s results to {courseName}'s leaderboard.");
+
+                    yield return null;
+                }
                 else
                     Debug.Log($"Uploaded hole {holeIndex} results to the leaderboard successfully.");
             }
         }
+
+        // Lets subscribed parties know that the POST request for the course's leaderboard succeeded.
+        NetworkRequestCompleted?.Invoke($"Successfully uploaded results to {courseName}'s leaderboard.");
     }
 }

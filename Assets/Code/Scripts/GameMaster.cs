@@ -23,7 +23,8 @@ public class GameMaster : NetworkBehaviour
     public enum GameState
     {
         Lobby,
-        Game
+        Game,
+        Results
     }
 
     // The current state of the game. Currently only used to deny new players when not in Lobby state.
@@ -199,6 +200,26 @@ public class GameMaster : NetworkBehaviour
         return (float)(_currentHole.BaseScore *
             Mathf.Pow(_currentHole.ShotCountScoreFactor, shotCount) *
             Mathf.Pow(_currentHole.TimeSpentScoreFactor, timeSpent));
+    }
+
+    /// <summary>
+    /// Adds a result to the results list of every connected client/host/server.
+    /// </summary>
+    /// <param name="holeIndex">The hole which the record will be inserted.</param>
+    /// <param name="resultToAdd">The record that will be inserted at the given index.</param>
+    [Rpc(SendTo.Everyone)]
+    void AddResultToResultsListRPC(int holeIndex, PlayerResult resultToAdd)
+    {
+        PlayerResultRecords[holeIndex].Add(resultToAdd);
+    }
+
+    /// <summary>
+    /// Inserts a list of results into the results list of every connected client/host/server, at the specified position.
+    /// </summary>
+    [Rpc(SendTo.Everyone)]
+    void AddCumulativeCourseResultsRPC()
+    {
+        PlayerResultRecords.Insert(0, LeaderboardManager.GetCourseResultsFromHoleResults(PlayerResultRecords));
     }
 
     /// <summary>
@@ -386,7 +407,10 @@ public class GameMaster : NetworkBehaviour
         // Will move to specific scene for scoring and the leaderboard in the future. For now, just prints score info.
         if (_currentHoleID >= CurrentCourse.Holes.Length)
         {
-            Debug.Log("All players have completed the course.");
+            // No more scores will be added, so calculate and add the cumulative course results to the record.
+            AddCumulativeCourseResultsRPC();
+
+            NetworkManager.Singleton.SceneManager.LoadScene("PostGame", LoadSceneMode.Single);
 
             return;
         }
@@ -419,13 +443,13 @@ public class GameMaster : NetworkBehaviour
 
             PlayerResult playerHoleResult = new PlayerResult
             {
-                PlayerName = playerWhoOwnsBall.PlayerName.ToString(),
+                PlayerName = playerWhoOwnsBall.PlayerName,
                 PlayerScore = CalculateScore(launchCount, timeSpent),
                 PlayerHits = launchCount,
                 PlayerTimeSpent = timeSpent
             };
 
-            PlayerResultRecords[_currentHoleID].Add(playerHoleResult);
+            AddResultToResultsListRPC(_currentHoleID, playerHoleResult);
         }
 
         // Deactivates the ball now that it has reached the goal.
