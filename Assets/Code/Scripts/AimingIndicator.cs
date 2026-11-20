@@ -123,19 +123,30 @@ public class AimingIndicator : MonoBehaviour
         arrowHeadWingsOuterLeft += textureOffset;
         arrowHeadWingsOuterRight += textureOffset;
 
-        // An array of the calculated vertices to be combined into triangles.
+       // Calculates a thin, consistent width for the arrow shaft
+        float shaftWidth = 55f;
+
+        // Determines the direction perpendicular to the arrow
+        Vector2 arrowDirection = (arrowheadLocation - textureOffset).normalized;
+        Vector2 shaftPerpendicular = Vector2.Perpendicular(arrowDirection) * (shaftWidth / 2f);
+
+        // Creates the arrow shaft and narrow arrowhead
         Vector2[] aimingIndicatorArrowVertices = {
-            aimLocalCoordinates,
-            arrowheadLocation,
-            arrowheadWingsInnerLeft,
-            arrowheadWingsInnerRight,
+            aimLocalCoordinates + shaftPerpendicular,
+            aimLocalCoordinates - shaftPerpendicular,
+            arrowheadWingsOrigin + textureOffset + shaftPerpendicular,
+            arrowheadWingsOrigin + textureOffset - shaftPerpendicular,
             arrowHeadWingsOuterLeft,
-            arrowHeadWingsOuterRight
+            arrowHeadWingsOuterRight,
+            arrowheadLocation
         };
 
-        // Creates the triangles from the given vertex indices.
-        // Every three digits is a triangle made from the given vertex indices.
-        ushort[] aimingIndicatorArrowTriangles = {0, 2, 3, 4, 5, 1};
+        // Defines triangles for the rectangular shaft and arrowhead
+        ushort[] aimingIndicatorArrowTriangles = {
+            0, 1, 2,
+            1, 3, 2,
+            4, 5, 6
+        };
 
         // Applies the triangles to the sprite.
         _indicatorSprite.OverrideGeometry(aimingIndicatorArrowVertices, aimingIndicatorArrowTriangles);

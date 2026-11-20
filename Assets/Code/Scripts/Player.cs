@@ -13,6 +13,7 @@ using Unity.Collections;
 /// object differs from its previous state.
 /// Will contain the player's customization choices.
 /// </remarks>
+[Serializable]
 public struct Player : INetworkSerializable, IEquatable<Player>
 {
     // The player's name.
@@ -25,9 +26,6 @@ public struct Player : INetworkSerializable, IEquatable<Player>
     // The player's GUID, used to maintain a player reference if a player disconnects.
     // The ClientID could change when reconnecting, while the GUID will be constant for the game's duration.
     public FixedString64Bytes PlayerGUID;
-
-    // The player's score on the current course.
-    public float PlayerScore;
 
     // Later, a reference to a ScriptableObject with cosmetic choices.
     // Maybe a reference to a settings object for player-specific settings.
@@ -42,7 +40,6 @@ public struct Player : INetworkSerializable, IEquatable<Player>
         bufferSerializer.SerializeValue(ref PlayerName);
         bufferSerializer.SerializeValue(ref PlayerClientID);
         bufferSerializer.SerializeValue(ref PlayerGUID);
-        bufferSerializer.SerializeValue(ref PlayerScore);
     }
 
     /// <summary>
@@ -56,7 +53,6 @@ public struct Player : INetworkSerializable, IEquatable<Player>
         if (PlayerName != otherPlayer.PlayerName) return false;
         if (PlayerClientID != otherPlayer.PlayerClientID) return false;
         if (PlayerGUID != otherPlayer.PlayerGUID) return false;
-        if (PlayerScore != otherPlayer.PlayerScore) return false;
 
         // Returns true if the function survived all the previous comparisons.
         return true;

@@ -12,5 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 01e215a1f9bb0cf4e80eaec25f4232b3, type: 3}
   m_Name: TestHole
   m_EditorClassIdentifier: ChronoShot::Hole
+  Map: {fileID: 102900000, guid: 600254a33fa42e547a029cef2a220fab, type: 3}
   BaseScore: 100000
   ShotCountScoreFactor: 0.9
+  TimeSpentScoreFactor: 0.99
