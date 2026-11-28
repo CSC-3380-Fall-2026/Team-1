@@ -65,7 +65,7 @@ public class MovingPlatform : NetworkBehaviour
             return;
 
         // Checks if the platform has reached the target position.
-        if (transform.position == _currentTargetPoint.PointObjectTransform.position)
+        if ((Vector2)transform.position == (Vector2)_currentTargetPoint.PointObjectTransform.position)
         {
             // Decides what to do when the platform has rotated to the target direction.
             if (transform.rotation == _currentTargetPoint.PointObjectTransform.rotation)

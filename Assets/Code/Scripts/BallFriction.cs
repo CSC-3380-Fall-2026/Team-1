@@ -111,7 +111,7 @@ public class BallFriction : NetworkBehaviour
     /// <param name="physicsUpdates"> The number of physics updates to ignore friction for </param>
     public void IgnoreFriction(int physicsUpdates)
     {
-        _ignoreFriction += physicsUpdates;
+        _ignoreFriction = Mathf.Max(_ignoreFriction, physicsUpdates);
     }
 
     /// <summary>

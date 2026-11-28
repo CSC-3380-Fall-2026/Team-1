@@ -27,8 +27,8 @@ EditorBuildSettings:
     path: Assets/Level/Scenes/PostGame.unity
     guid: 01f9c2d2e2238564db2a3ef644b55d0b
   - enabled: 1
-    path: Assets/Level/Scenes/IntermediateHole2.unity
-    guid: 12918efaed4224c0ca092e5ce64a250a
+    path: Assets/Level/Scenes/IntermediateHole1.unity
+    guid: 89ea165ba32834cb29c9d6e38e033249
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

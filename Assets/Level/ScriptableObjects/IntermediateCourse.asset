@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: ChronoShot::Course
   CourseName: Intermediate Course
   Holes:
+  - {fileID: 11400000, guid: 67ea16a83505d4c68890f1c613599f61, type: 2}
   - {fileID: 0}
-  - {fileID: 11400000, guid: f49925c3b6eda470993f3a0b39a5dc3c, type: 2}
   - {fileID: 0}
   CoursePreviewImages: []
   CourseDescription: More challenging.
