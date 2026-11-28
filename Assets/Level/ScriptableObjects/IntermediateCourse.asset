@@ -15,7 +15,7 @@ MonoBehaviour:
   CourseName: Intermediate Course
   Holes:
   - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 11400000, guid: f49925c3b6eda470993f3a0b39a5dc3c, type: 2}
   - {fileID: 0}
   CoursePreviewImages: []
   CourseDescription: More challenging.
